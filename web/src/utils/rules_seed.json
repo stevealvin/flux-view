@@ -1,0 +1,74 @@
+[
+  {
+    "name": "全面屏壁纸",
+    "description": "一个专为全面屏手机适配的2K,4K超清手机壁纸网站",
+    "type": "图片",
+    "discovery_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async () => {\r\n  const { data } = await axios.get('https://bizhi.wpcoder.cn/page/1')\r\n  const $ = cheerio.load(data)\r\n  const list = $('ul.wallpaper li').map((i, el) => {\r\n    return {\r\n      title: $(el).find('a').attr('title'),\r\n      cover: $(el).find('img').attr('src'),\r\n    }\r\n  }).toArray()\r\n  return [{\r\n    title: '最新',\r\n    href: null,\r\n    items: list\r\n  }]\r\n})",
+    "search_code": "",
+    "detail_code": "",
+    "base_url": "https://bizhi.wpcoder.cn",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  },
+  {
+    "name": "美图🪜",
+    "description": "获取美图写真列表",
+    "type": "图片",
+    "discovery_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async () => {\r\n  let url = 'https://meirentu.cc/'\r\n  try {\r\n    let { data } = await axios.get(url, {\r\n      headers: {\r\n        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',\r\n      }\r\n    })\r\n    let $ = cheerio.load(data)\r\n    let list = $('.cl .i_list').map((i, el) => {\r\n      return {\r\n        title: $(el).find('.meta-title').text().trim(),\r\n        cover: $(el).find('img').attr('data-src'),\r\n        href: 'https://meirentu.cc' + $(el).find('a').attr('href'),\r\n        date: $(el).find('.meta-post span').first().text().trim(),\r\n        desc: $(el).find('.cx_like').text().trim()\r\n      }\r\n    }).toArray()\r\n    return [{\r\n      title: '最新',\r\n      href: null,\r\n      items: list\r\n    }]\r\n  } catch (error) {\r\n  }\r\n})",
+    "search_code": "",
+    "detail_code": "",
+    "base_url": "https://meirentu.cc/",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  },
+  {
+    "name": "小黄书🪜",
+    "description": "获取小黄书视频列表",
+    "type": "视频",
+    "discovery_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async () => {\r\n  let url = 'https://xchina.co'\r\n  try {\r\n    let { data } = await axios.get(url, {\r\n      headers: {\r\n        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',\r\n      }\r\n    })\r\n    let $ = cheerio.load(data)\r\n    let list = $('.content-box:has(.header):has(.body):not(.featured-comments)').map((i, el) => {\r\n      let title = $(el).find('.left').text().trim()\r\n      let href = url + $(el).find('.right a').attr('href')\r\n\r\n      let items = $(el).find('.right .body').map((i, el) => {\r\n        return {\r\n          title: $(el).find('.item .title a').text().trim(),\r\n          cover: $(el).find('div.img[role=\"img\"]').attr('style')?.match(/url\\(['\"]?(.*?)['\"]?\\)/)?.[1],\r\n          subtitle: $(el).find('.model-container').text().trim(),\r\n          href: url + $(el).find('a').attr('href'),\r\n          tags: $(el).find('.tags').text().trim(),\r\n          date: null,\r\n          desc: null\r\n        }\r\n      }).toArray()\r\n\r\n      return {\r\n        title,\r\n        href,\r\n        items\r\n      }\r\n    }).toArray()\r\n    return list\r\n  } catch (error) {\r\n  }\r\n})",
+    "search_code": "",
+    "detail_code": "",
+    "base_url": "https://xchina.co",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  },
+  {
+    "name": "木瓜视频🪜",
+    "description": "获取木瓜视频列表",
+    "type": "视频",
+    "discovery_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async () => {\r\n  let url = 'https://91quanji.com'\r\n  try {\r\n    let { data } = await axios.get(url, {\r\n      headers: {\r\n        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',\r\n      }\r\n    })\r\n    let $ = cheerio.load(data)\r\n    let list = $('#list_videos_videos_index .container').map((i, el) => {\r\n      let title = $(el).find('.title').text().trim()\r\n      let href = url + $(el).find('.buttons a[href^=\"tag.jsp*\"]').attr('href')\r\n\r\n      let items = $(el).find('.thumb--videos').map((i, el) => {\r\n        return {\r\n          title: $(el).find('.thumb-spot__title').text().trim(),\r\n          cover: $(el).find('.thumb__img img').attr('src'),\r\n          subtitle: null,\r\n          href: $(el).find('a').attr('href'),\r\n          tags: null,\r\n          date: null,\r\n          desc: null\r\n        }\r\n      }).toArray()\r\n\r\n      return {\r\n        title,\r\n        href,\r\n        items\r\n      }\r\n    }).toArray()\r\n    return list\r\n  } catch (error) {\r\n  }\r\n})",
+    "search_code": "",
+    "detail_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async ({ href }) => {\r\n  let url = 'https://91quanji.com/' + href\r\n  try {\r\n    let { data } = await axios.get(url, {\r\n      headers: {\r\n        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',\r\n      }\r\n    })\r\n    let $ = cheerio.load(data)\r\n\r\n    function I(r) {\r\n      var n = \"\";\r\n      for (i = 0; i < r.length; ++i)\r\n        n += String.fromCharCode(128 ^ r.charCodeAt(i));\r\n      return n\r\n    }\r\n\r\n    // 提取eval(xxx)中间的字符串\r\n    function extractEvalString(str) {\r\n      // 匹配 eval( 和 ) 之间的内容，使用非贪婪匹配\r\n      const match = str.match(/eval\\(([\\s\\S]*?)\\)/);\r\n      return match ? match[1] : null;\r\n    }\r\n\r\n    let evalStr = extractEvalString($('script[type=\"text/javascript\"]').html())\r\n    evalStr = evalStr.substring(3, evalStr.length - 3)\r\n    let scriptStr = I(evalStr)\r\n    let videoUrl = scriptStr.match(/url:\\s*['\"]([^'\"]+)['\"]/)?.[1];\r\n\r\n    let list = $('.thumb--videos').map((i, el) => {\r\n      return {\r\n        title: $(el).find('.thumb-spot__title').text().trim(),\r\n        cover: $(el).find('.thumb__img img').attr('src'),\r\n        subtitle: null,\r\n        href: null,\r\n        tags: null,\r\n        date: null,\r\n        desc: null\r\n      }\r\n    }).toArray()\r\n    return { videoUrl, list }\r\n  } catch (error) {\r\n    console.error(error);\r\n  }\r\n})",
+    "base_url": "https://91quanji.com",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  },
+  {
+    "name": "蜜桃视频",
+    "description": "蜜桃视频",
+    "type": "视频",
+    "discovery_code": "import axios from 'axios'\r\n\r\n(async () => {\r\n  const map = {\r\n    '吃瓜': 'https://www.mmtt06.com/categoryPaginate/10030-0-0-0.html',\r\n    'AV': 'https://www.mmtt06.com/categoryPaginate/10011-0-0-0.html',\r\n    'ONLYFANS': 'https://www.mmtt06.com/categoryPaginate/10032-0-0-0.html',\r\n  }\r\n  let playBaseUrl = 'https://107.174.106.254:15511'\r\n  const result = []\r\n  for (const [key, value] of Object.entries(map)) {\r\n    let items = []\r\n    try {\r\n      let { data } = await axios.get(value, {\r\n        headers: {\r\n          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',\r\n        }\r\n      })\r\n      items = [...(data?.data || []).map(item => {\r\n        let playPath = item?.playPreviewPath?.replace('/preview', '/index')\r\n        return {\r\n          title: item.title,\r\n          cover: `${playBaseUrl}${item.imagePath}`,\r\n          subtitle: null,\r\n          href: `${playBaseUrl}${playPath}`,\r\n          tags: item?.tags?.map((tag) => tag.name).join(', '),\r\n          date: null,\r\n          desc: null,\r\n        }\r\n      })]\r\n\r\n    } catch (error) {\r\n      console.error(error);\r\n\r\n    }\r\n    result.push({\r\n      title: key,\r\n      href: value,\r\n      items\r\n    })\r\n  }\r\n  return result\r\n})",
+    "search_code": "(async ({ keyword }) => {\r\n        let baseUrl = `https://www.mmtt06.com/searchPaginate/${keyword}/1.html`\r\n        let playBaseUrl = 'https://107.174.106.254:15511'\r\n\r\n        let { data } = await axios.get(baseUrl, {\r\n          headers: {\r\n            'User-Agent': ua,\r\n          }\r\n        })\r\n        return (data?.data || []).map(item => {\r\n          let playPath = item?.playPreviewPath?.replace('/preview', '/index')\r\n          return {\r\n            baseUrl: 'https://www.mmtt06.com',\r\n            title: item.title,\r\n            cover: `${playBaseUrl}${item.imagePath}`,\r\n            subtitle: null,\r\n            href: `${playBaseUrl}${playPath}`,\r\n            tags: item?.tags?.map((tag) => tag.name).join(', '),\r\n            date: null,\r\n            desc: null,\r\n          }\r\n        })\r\n      })",
+    "detail_code": "(async ({ href }) => {\r\n        let baseUrl = 'https://107.174.106.254:15511'\r\n        return { videoUrl: href, list: [] }\r\n      })",
+    "base_url": "https://www.mmtt06.com",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  },
+  {
+    "name": "JAVMENU",
+    "description": "JAV目錄大全 | 世界上最齊全的日本AV資料庫",
+    "type": "视频",
+    "discovery_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async () => {\r\n  const { data } = await axios.get('https://javmenu.com/zh/');\r\n\r\n  // 使用 cheerio 解析 HTML\r\n  const $ = cheerio.load(data);\r\n  const result = [];\r\n\r\n  // 遍历所有 .video-list-item 元素\r\n  $('.video-list-item').each((index, element) => {\r\n    const item = {\r\n      url: $(element).find('a').attr('href'),\r\n      cover: $(element).find('.card-img-top').attr('data-src'),\r\n      title: $(element).find('.card-text').text().trim(),\r\n      desc: $(element).find('.text-muted').text().trim()\r\n    };\r\n    result.push(item);\r\n  });\r\n  result.shift()\r\n\r\n  return [{\r\n    title: '热门',\r\n    href: 'https://javmenu.com/',\r\n    items: result\r\n  }];\r\n})",
+    "search_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async ({ keyword }) => {\r\n  const { data } = await axios.get('https://javmenu.com/zh/search?wd=' + keyword);\r\n\r\n  // 使用 cheerio 解析 HTML\r\n  const $ = cheerio.load(data);\r\n  const result = [];\r\n\r\n  // 遍历所有 .video-list-item 元素\r\n  $('.video-list-item').each((index, element) => {\r\n    const item = {\r\n      url: $(element).find('a').attr('href'),\r\n      cover: $(element).find('.card-img-top').attr('data-src'),\r\n      title: $(element).find('.card-text').text().trim(),\r\n      desc: $(element).find('.text-muted').text().trim()\r\n    };\r\n    result.push(item);\r\n  });\r\n  result.shift()\r\n\r\n  return result;\r\n})",
+    "detail_code": "import axios from 'axios'\r\nimport cheerio from 'cheerio'\r\n\r\n(async ({ url, href }) => {\r\n  const { data } = await axios.get(href);\r\n\r\n  // 使用 cheerio 解析 HTML\r\n  const $ = cheerio.load(data);\r\n  let videoUrl = $('#seo-main-video').attr('src')\r\n  let cover = $('#seo-main-video').attr('poster')\r\n  const result = [];\r\n\r\n  // 遍历所有 .video-list-item 元素\r\n  $('.video-list-item').each((index, element) => {\r\n    const item = {\r\n      url: $(element).find('a').attr('href'),\r\n      cover: $(element).find('.card-img-top').attr('data-src'),\r\n      title: $(element).find('.card-text').text().trim(),\r\n      desc: $(element).find('.text-muted').text().trim()\r\n    };\r\n    result.push(item);\r\n  });\r\n  result.shift()\r\n\r\n  let discovery = $('ul.list-unstyled li').map((index, element) => {\r\n    return {\r\n      url: $(element).find('a').attr('href'),\r\n      cover: $(element).find('img').attr('data-src'),\r\n      title: $(element).find('h5').text().trim(),\r\n    };\r\n  }).toArray();\r\n\r\n  let images = $('.d-flex.flex-wrap.py-0.px-0 img').map((index, element) => {\r\n    return $(element).attr('data-src')\r\n  }).toArray();\r\n\r\n  let desc = $('.left-wrapper .card-body').html()\r\n\r\n  return {\r\n    videoUrl,\r\n    desc,\r\n    cover,\r\n    images,\r\n    discovery,\r\n    list: result\r\n  };\r\n})",
+    "base_url": "https://javmenu.com/",
+    "author": "管理员",
+    "version": "1.0.0",
+    "enabled": 1
+  }
+]

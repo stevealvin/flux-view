@@ -1,0 +1,36 @@
+@import './ui.css';
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  color-scheme: light dark;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  --app-bg: #f0f2f5;
+}
+
+html.dark {
+  --app-bg: #181818;
+  --main-bg: #212121;
+  --color-text: var(--vt-c-white);
+}
+
+#app {
+  height: 100vh;
+  background-color: var(--app-bg);
+}
+
+/* 修改滚动条样式 浏览器兼容性 Chrome: 121 Edge: 121 Firefox: 64 Safari: No */
+.overflow-auto, .overflow-scroll, .overflow-x-auto, .overflow-x-scroll, .overflow-y-auto, .overflow-y-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #ececec transparent;
+}
+.overflow-auto:hover, .overflow-scroll:hover, .overflow-x-auto:hover, .overflow-y-auto:hover {
+  scrollbar-color: #dfdfdf transparent;
+}
