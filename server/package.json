@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Hono.js API server for nl-view rules engine",
+  "description": "Hono.js API server for FluxView rules engine",
   "type": "module",
   "private": true,
   "scripts": {
