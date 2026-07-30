@@ -54,7 +54,7 @@ flux-view/
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/your-username/flux-view.git
+git clone https://github.com/stevealvin/flux-view.git
 cd flux-view
 
 # 2. 安装根目录及所有工作区依赖
