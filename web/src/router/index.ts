@@ -15,6 +15,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/rules/index.vue')
   },
   {
+    path: '/rules/market',
+    component: () => import('../views/rules/market.vue')
+  },
+  {
     path: '/rules/edit',
     component: () => import('../views/rules/edit.vue')
   },

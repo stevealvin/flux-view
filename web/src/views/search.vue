@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+defineOptions({ name: 'SearchView' })
 import http from '@/utils/http'
 import { ruleService } from '@/utils/ruleService'
-import { ArrowLeft, Search, Compass, AlertCircle, Sparkles } from '@lucide/vue'
+import {
+  ArrowLeft,
+  Search,
+  Compass,
+  AlertCircle,
+  Sparkles,
+  Layers,
+  Play
+} from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,25 +51,22 @@ const performSearch = async (query: string) => {
   searchResults.value = []
   
   try {
-    // 1. 获取所有规则
     const allRules = ruleService.getRules()
     const enabledRules = allRules.filter((r: any) => {
-      // Robust enabled state check supporting number, boolean, and string formats
-      const isEnabled = r.enabled === 1 || r.enabled === true || r.enabled === '1' || r.enabled === 'true';
-      if (!isEnabled) return false;
+      const isEnabled = r.enabled === 1 || r.enabled === true || r.enabled === '1' || r.enabled === 'true'
+      if (!isEnabled) return false
       
-      if (!r.search_code) return false;
-      const code = r.search_code.trim();
-      // Exclude empty default placeholders
+      if (!r.search_code) return false
+      const code = r.search_code.trim()
       const isEmptyPlaceholder = 
         code === 'export default async () => {\n  \n}' ||
         code === 'export default async () => {\n\n}' ||
         code === 'export default async () => {}' ||
         code === '(async () => {\n  \n})' ||
         code === '(async () => {\n\n})' ||
-        code === '(async () => {})';
+        code === '(async () => {})'
       
-      return !isEmptyPlaceholder;
+      return !isEmptyPlaceholder
     })
 
     if (enabledRules.length === 0) {
@@ -71,7 +78,6 @@ const performSearch = async (query: string) => {
     totalRuleRequests.value = enabledRules.length
     activeRuleRequests.value = enabledRules.length
 
-    // 2. 通过 Hono 后端发起并行搜索
     enabledRules.forEach(async (rule: any) => {
       try {
         const searchRes = await http.post('/rules/run', {
@@ -83,11 +89,10 @@ const performSearch = async (query: string) => {
         })
         
         if (Array.isArray(searchRes)) {
-          // 映射每项结果以包含规则元数据
           const mapped = searchRes.map((item: any) => ({
             ...item,
             ruleId: rule.id,
-            ruleName: rule.name,
+            ruleName: rule.title || rule.name,
             ruleType: rule.type
           }))
           searchResults.value.push(...mapped)
@@ -102,16 +107,14 @@ const performSearch = async (query: string) => {
       }
     })
   } catch (error: any) {
-    errorMsg.value = '搜索发起失败: ' + (error.message || error)
+    errorMsg.value = '搜索调度错误: ' + (error.message || error)
     loading.value = false
   }
 }
 
 const handleSearchInput = () => {
-  const query = searchKeyword.value.trim()
-  if (query) {
-    router.replace({ query: { q: query } })
-    performSearch(query)
+  if (searchKeyword.value.trim()) {
+    router.push({ path: '/search', query: { q: searchKeyword.value.trim() } })
   }
 }
 
@@ -128,7 +131,6 @@ const goToDetail = (item: any) => {
   })
 }
 
-// 监听 query 关键字以适配浏览器的前进/后退按钮
 watch(() => route.query.q, () => {
   initSearch()
 })
@@ -139,110 +141,148 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-neutral-50/30 dark:bg-neutral-900/10">
-    <!-- Top Search Header -->
-    <div class="bg-white/40 dark:bg-neutral-800/20 border-b border-neutral-200/50 dark:border-neutral-800/50 backdrop-blur-md sticky top-0 z-30 w-full">
-      <div class="px-4 py-3 flex items-center gap-3 w-full">
-        <n-button quaternary circle size="medium" @click="router.push('/')">
-          <template #icon>
-            <ArrowLeft class="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-          </template>
-        </n-button>
-        
-        <!-- 输入框栏 -->
-        <div class="flex-1 max-w-xl">
-          <div class="relative flex items-center bg-white/70 dark:bg-neutral-800/60 border border-neutral-200/50 dark:border-neutral-700/50 backdrop-blur-xl rounded-xl shadow-sm px-3 py-1.5 focus-within:border-sky-500/50 transition-colors">
-            <Search class="w-4 h-4 text-neutral-400 shrink-0 mr-2" />
-            <input
-              v-model="searchKeyword"
-              type="text"
-              placeholder="搜索视频、图片、资讯..."
-              class="w-full bg-transparent border-none outline-none text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 text-sm py-1"
-              @keyup.enter="handleSearchInput"
-            />
-            <n-button type="info" secondary size="small" round @click="handleSearchInput">
-              搜索
-            </n-button>
-          </div>
-        </div>
+  <div class="space-y-6 max-w-7xl mx-auto pb-10">
+    <!-- 顶部聚合搜索控制台 (mori-box 风格) -->
+    <div class="glass-panel rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+      <div class="flex items-center gap-3 w-full">
+        <button
+          @click="router.push('/')"
+          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
+          title="返回首页"
+        >
+          <ArrowLeft class="w-4 h-4" />
+        </button>
 
-        <!-- 渐进式搜索状态条 -->
-        <div class="text-xs text-neutral-400 hidden sm:block" v-if="loading && totalRuleRequests > 0">
-          已搜索 ({{ totalRuleRequests - activeRuleRequests }}/{{ totalRuleRequests }}) 个规则源
+        <div class="flex-1 relative">
+          <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+          <input
+            v-model="searchKeyword"
+            type="text"
+            placeholder="搜索全网视频、图片、小说资源..."
+            class="w-full pl-10 pr-24 py-2 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all"
+            @keyup.enter="handleSearchInput"
+          />
+          <button
+            @click="handleSearchInput"
+            class="absolute right-1.5 top-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
+          >
+            搜索
+          </button>
         </div>
+      </div>
+
+      <!-- 搜索状态指示条 -->
+      <div v-if="loading && totalRuleRequests > 0" class="flex items-center justify-between text-xs text-slate-400 pt-1">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></div>
+          <span>正在并行请求全网规则源 ({{ totalRuleRequests - activeRuleRequests }}/{{ totalRuleRequests }})...</span>
+        </div>
+        <span class="font-mono">{{ Math.round(((totalRuleRequests - activeRuleRequests) / totalRuleRequests) * 100) }}%</span>
       </div>
     </div>
 
-    <!-- 搜索进度线 -->
-    <div v-if="loading" class="h-0.5 w-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden shrink-0">
-      <div class="h-full bg-sky-500 animate-pulse w-2/3 rounded-full"></div>
-    </div>
+    <!-- 搜索结果展示区 -->
+    <div>
+      <!-- 错误状态 -->
+      <div
+        v-if="errorMsg"
+        class="glass-panel rounded-2xl p-8 max-w-md mx-auto my-12 text-center flex flex-col items-center justify-center space-y-3 border-rose-500/30 bg-rose-500/5"
+      >
+        <AlertCircle class="w-10 h-10 text-rose-500" />
+        <h3 class="text-sm font-bold text-rose-600 dark:text-rose-400">搜索异常</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">{{ errorMsg }}</p>
+      </div>
 
-    <!-- 主结果容器 -->
-    <div class="flex-1 overflow-auto px-4 py-4">
-      <div class="w-full">
-        <!-- 错误状态 -->
-        <div v-if="errorMsg" class="max-w-md mx-auto my-12 p-6 rounded-2xl border border-red-200/50 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/10 text-center">
-          <AlertCircle class="w-12 h-12 text-red-500 mx-auto mb-3" />
-          <h3 class="text-lg font-bold text-red-600 dark:text-red-400">搜索异常</h3>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-2">{{ errorMsg }}</p>
-        </div>
+      <!-- 未开始搜索状态 -->
+      <div
+        v-else-if="!searched"
+        class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
+      >
+        <Compass class="w-12 h-12 text-slate-400 dark:text-slate-600" />
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">聚合检索中心</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          在上方输入关键字，一键并行检索所有已启用的跨媒体规则源。
+        </p>
+      </div>
 
-        <!-- 无结果/空状态 -->
-        <div v-else-if="searched && !loading && searchResults.length === 0" class="flex flex-col items-center justify-center py-32 text-center">
-          <Sparkles class="w-12 h-12 text-neutral-300 dark:text-neutral-600 mb-3" />
-          <p class="text-neutral-600 dark:text-neutral-400 font-medium">没有找到相关资源</p>
-          <p class="text-neutral-400 text-xs mt-1">请尝试更换其他关键词，或者检查是否启用了更多的规则解析源。</p>
-        </div>
+      <!-- 无结果状态 -->
+      <div
+        v-else-if="searched && !loading && searchResults.length === 0"
+        class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
+      >
+        <Sparkles class="w-10 h-10 text-slate-400" />
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">没有找到相关资源</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          尝试更换关键字，或进入“规则管理”启用更多规则源。
+        </p>
+      </div>
 
-        <!-- 初始未搜索状态 -->
-        <div v-else-if="!searched" class="flex flex-col items-center justify-center py-32 text-neutral-400 text-center gap-2">
-          <Compass class="w-12 h-12 text-neutral-300 dark:text-neutral-600" />
-          <span>在上方搜索框内输入关键字，按回车开始聚合检索</span>
-        </div>
-
-        <!-- 结果网格 -->
-        <div v-else class="space-y-6">
-          <div class="flex items-center justify-between border-b border-neutral-200/50 dark:border-neutral-800/80 pb-3">
-            <h2 class="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-              搜索结果
-              <span class="text-xs text-neutral-400 font-normal ml-2">(共找到 {{ searchResults.length }} 条结果)</span>
+      <!-- 结果网格列表 -->
+      <div v-else class="space-y-4">
+        <!-- 结果标题条 -->
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/50 dark:border-white/5">
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+              检索结果
             </h2>
           </div>
+          <span class="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/30">
+            共找到 {{ searchResults.length }} 条结果
+          </span>
+        </div>
 
-          <div class="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <!-- 结果卡片网格 (mori-box 风格) -->
+        <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div
+            v-for="(item, index) in searchResults"
+            :key="index"
+            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-slate-200/60 dark:border-white/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-indigo-500/10 active:scale-98"
+            @click="goToDetail(item)"
+          >
+            <!-- 封面图 -->
             <div
-              v-for="(item, index) in searchResults"
-              :key="index"
-              class="group relative cursor-pointer"
-              @click="goToDetail(item)"
+              class="relative w-full overflow-hidden bg-slate-200 dark:bg-slate-900"
+              :class="item.ruleType === '视频' ? 'aspect-[16/10]' : 'aspect-[3/4]'"
             >
-              <!-- 卡片包装器 -->
-              <div class="overflow-hidden rounded-xl border border-neutral-200/50 dark:border-neutral-800/50 bg-white/60 dark:bg-neutral-800/20 backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] flex flex-col h-full">
-                <!-- 带有 Referrer 策略的封面图 -->
-                <div class="aspect-3/4 overflow-hidden relative bg-neutral-200 dark:bg-neutral-800">
-                  <img
-                    :src="item.cover"
-                    referrerpolicy="no-referrer"
-                    alt="cover"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <!-- 数据源标签图层 -->
-                  <div class="absolute top-2 left-2 z-10">
-                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500 text-white shadow-sm">
-                      {{ item.ruleName }}
-                    </span>
-                  </div>
-                </div>
+              <img
+                v-if="item.cover"
+                :src="item.cover"
+                referrerpolicy="no-referrer"
+                :alt="item.title"
+                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div v-else class="h-full w-full flex items-center justify-center text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-800">
+                <Compass class="w-8 h-8" />
+              </div>
 
-                <!-- 标题 -->
-                <div class="p-3 flex-1 flex flex-col justify-between">
-                  <h3 class="text-xs font-bold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug group-hover:text-sky-500 transition-colors duration-200">
-                    {{ item.title }}
-                  </h3>
+              <!-- 顶部数据源徽章 -->
+              <div class="absolute top-2 left-2 z-10">
+                <span class="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-indigo-600/90 text-white shadow-2xs leading-none backdrop-blur-md border border-indigo-400/30">
+                  {{ item.ruleName }}
+                </span>
+              </div>
+
+              <!-- 底部阴影渐变 -->
+              <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
+
+              <!-- 悬浮播放指示 -->
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center">
+                <div class="w-9 h-9 rounded-full bg-white/90 dark:bg-indigo-600 text-slate-900 dark:text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                  <Play class="w-4 h-4 ml-0.5 fill-current" />
                 </div>
               </div>
+            </div>
+
+            <!-- 卡片文本 -->
+            <div class="p-2.5 flex flex-col justify-between flex-1 gap-1">
+              <h3 class="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" :title="item.title">
+                {{ item.title }}
+              </h3>
+              <p v-if="item.author || item.desc" class="text-[10px] text-slate-400 truncate">
+                {{ item.author || item.desc }}
+              </p>
             </div>
           </div>
         </div>

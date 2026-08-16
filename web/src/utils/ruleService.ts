@@ -14,6 +14,8 @@ export interface Rule {
   author: string
   version: string
   enabled: number // 0 or 1
+  title?: string
+  ext?: string
   created_at?: string
   updated_at?: string
 }

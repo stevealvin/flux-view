@@ -1,7 +1,13 @@
 <script setup lang="ts">
+import { ref, useTemplateRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+defineOptions({ name: 'EditView' })
+import { useMessage } from 'naive-ui'
 import http from '@/utils/http'
 import { ruleService, type Rule } from '@/utils/ruleService'
-import { RefreshCcw, Save, ArrowLeft, Copy, Download } from '@lucide/vue'
+import { RefreshCcw, Save, ArrowLeft, Copy, Download, Play, Code } from '@lucide/vue'
+import CodeEditor from '@/components/CodeEditor/index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,17 +17,17 @@ const formRef = useTemplateRef('formRef')
 const form = ref<Partial<Rule>>({
   name: '',
   description: '',
-  type: '',
+  type: '视频',
   discovery_code: `export default async () => {\n  \n}`,
   search_code: `export default async () => {\n  \n}`,
   detail_code: `export default async () => {\n  \n}`,
-  author: '管理员',
-  version: '',
+  author: '系统管理员',
+  version: '1.0.0',
   base_url: '',
 })
 const submitLoading = ref(false)
 const showDrawer = ref(false)
-const runResult = ref()
+const runResult = ref('')
 
 const loadData = async () => {
   let id = route.query.id
@@ -36,12 +42,12 @@ const onReset = () => {
   form.value = {
     name: '',
     description: '',
-    type: '',
+    type: '视频',
     discovery_code: 'export default async () => {\n  \n}',
     search_code: 'export default async () => {\n  \n}',
     detail_code: 'export default async () => {\n  \n}',
-    author: '管理员',
-    version: '',
+    author: '系统管理员',
+    version: '1.0.0',
     base_url: '',
   }
   formRef.value?.restoreValidation()
@@ -54,7 +60,7 @@ const onSubmit = async () => {
   submitLoading.value = true
   try {
     const saved = ruleService.saveRule(form.value)
-    message.success('保存成功')
+    message.success('保存规则成功')
     if (!route.query.id && saved.id) {
       router.replace(`/rules/edit?id=${saved.id}`)
     } else {
@@ -66,14 +72,15 @@ const onSubmit = async () => {
   submitLoading.value = false
 }
 
-const onRun = async (code) => { 
+const onRun = async (code: string | undefined) => { 
+  if (!code) return
   showDrawer.value = true
-  runResult.value = '正在运行...'
+  runResult.value = '正在沙箱中执行规则...'
   try {
     let result = await http.post('/rules/run', { code })
     runResult.value = JSON.stringify(result || {}, null, 2)
-  } catch (error) {
-    runResult.value = JSON.stringify(error || {}, null, 2)
+  } catch (error: any) {
+    runResult.value = JSON.stringify(error?.response?.data || error?.message || error || {}, null, 2)
   }
 }
 
@@ -88,9 +95,7 @@ const copyRule = async () => {
     } else {
       const textArea = document.createElement('textarea')
       textArea.value = jsonStr
-      textArea.style.position = 'fixed'
       document.body.appendChild(textArea)
-      textArea.focus()
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
@@ -104,17 +109,17 @@ const copyRule = async () => {
 const exportRule = () => {
   try {
     const { id, created_at, updated_at, ...rest } = form.value
-    const jsonStr = JSON.stringify([rest], null, 2)
+    const jsonStr = JSON.stringify(rest, null, 2)
     const blob = new Blob([jsonStr], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${form.value.name || 'rule'}_v${form.value.version || '1.0.0'}_rule.json`
+    a.download = `${form.value.name || 'rule'}.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    message.success('导出成功')
+    message.success('已导出规则文件')
   } catch (error: any) {
     message.error('导出失败: ' + error.message)
   }
@@ -124,130 +129,170 @@ loadData()
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-neutral-50/30 dark:bg-neutral-900/10">
-    <!-- 顶部操作栏 -->
-    <div class="bg-white/40 dark:bg-neutral-800/20 border-b border-neutral-200/50 dark:border-neutral-800/50 backdrop-blur-md sticky top-0 z-30 w-full">
-      <div class="px-4 py-3 flex items-center justify-between w-full">
-        <div class="flex items-center gap-3">
-          <n-button quaternary circle size="medium" @click="router.back()">
-            <template #icon>
-              <ArrowLeft class="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-            </template>
-          </n-button>
-          <div>
-            <h1 class="text-sm font-bold text-neutral-800 dark:text-neutral-100 max-w-lg line-clamp-1">
-              规则编辑
-            </h1>
-            <p class="text-[10px] text-neutral-400" v-if="form.name">{{ form.name }} • {{ form.type || '未指定' }}</p>
-          </div>
+  <div class="space-y-6 max-w-6xl mx-auto pb-10">
+    <!-- 顶部操作栏 (mori-box 风格) -->
+    <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-3">
+        <button
+          @click="router.back()"
+          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
+          title="返回"
+        >
+          <ArrowLeft class="w-4 h-4" />
+        </button>
+        <div>
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <span>{{ route.query.id ? '编辑规则配置' : '新建规则' }}</span>
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400" v-if="form.name">
+            {{ form.name }} • {{ form.type || '未指定' }} • v{{ form.version || '1.0.0' }}
+          </p>
         </div>
+      </div>
 
-        <div class="flex items-center gap-2" v-if="route.query.id">
-          <n-button secondary size="small" type="info" round @click="copyRule">
-            <template #icon>
-              <n-icon :component="Copy" />
-            </template>
-            复制配置
-          </n-button>
-          <n-button secondary size="small" type="success" round @click="exportRule">
-            <template #icon>
-              <n-icon :component="Download" />
-            </template>
-            导出文件
-          </n-button>
-        </div>
+      <div class="flex items-center gap-2" v-if="route.query.id">
+        <button
+          @click="copyRule"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
+        >
+          <Copy class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">复制配置</span>
+        </button>
+        <button
+          @click="exportRule"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200/50 dark:border-indigo-800/30 transition-all cursor-pointer"
+        >
+          <Download class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">导出文件</span>
+        </button>
       </div>
     </div>
 
-    <!-- 主内容面板 -->
-    <div class="flex-1 overflow-auto px-4 py-4">
-      <n-card class="rounded-md!">
-        <n-form ref="formRef" :model="form">
-          <n-form-item label="名称" path="name" :rule="{ required: true, message: '请输入' }">
-            <n-input v-model:value="form.name" clearable />
+    <!-- 主表单面板 -->
+    <div class="glass-panel rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <n-form ref="formRef" :model="form">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <n-form-item label="规则标识名称" path="name" :rule="{ required: true, message: '请输入唯一英文或拼音标识' }">
+            <n-input v-model:value="form.name" clearable placeholder="如: b चरणों, javdb, bilibili" />
           </n-form-item>
-          <n-form-item label="描述" path="description">
-            <n-input v-model:value="form.description" type="textarea" :autosize="{ minRows: 2 }" clearable />
+          <n-form-item label="媒体类型" path="type" :rule="{ required: true, message: '请选择规则媒体类型' }">
+            <n-select
+              v-model:value="form.type"
+              :options="[
+                { label: '视频', value: '视频' },
+                { label: '图片', value: '图片' },
+                { label: '小说', value: '小说' },
+              ]"
+              clearable
+            />
           </n-form-item>
-          <div class="grid grid-cols-4 gap-4">
-            <n-form-item label="类型" path="type" :rule="{ required: true, message: '请输入' }">
-              <n-select
-                v-model:value="form.type"
-                :options="[
-                  { label: '视频', value: '视频' },
-                  { label: '图片', value: '图片' },
-                  { label: '小说', value: '小说' },
-                ]"
-                clearable
-              />
-            </n-form-item>
-          </div>
-          <div class="grid grid-cols-4 gap-4">
-            <n-form-item label="作者" path="author" :rule="{ required: true, message: '请输入' }">
-              <n-input v-model:value="form.author" clearable />
-            </n-form-item>
-            <n-form-item label="版本号" path="version" :rule="{ required: true, message: '请输入' }">
-              <n-input v-model:value="form.version" clearable placeholder="1.0.0" />
-            </n-form-item>
-          </div>
+        </div>
+
+        <n-form-item label="规则描述">
+          <n-input v-model:value="form.description" type="textarea" :autosize="{ minRows: 2 }" clearable placeholder="规则的详细说明及特性..." />
+        </n-form-item>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <n-form-item label="作者" path="author" :rule="{ required: true, message: '请输入作者名称' }">
+            <n-input v-model:value="form.author" clearable />
+          </n-form-item>
+          <n-form-item label="版本号" path="version" :rule="{ required: true, message: '请输入版本号' }">
+            <n-input v-model:value="form.version" clearable placeholder="1.0.0" />
+          </n-form-item>
           <n-form-item label="基础地址" path="base_url">
-            <n-input v-model:value="form.base_url" clearable />
+            <n-input v-model:value="form.base_url" clearable placeholder="https://example.com" />
           </n-form-item>
-          
-          <n-form-item label="脚本内容（javascript代码, 支持ES6语法, 内置axios, cheerio库）" :show-feedback="false">
-            <div id="drawer-target" class="w-full">
-              <n-tabs type="card" size="small">
-                <n-tab-pane name="1" tab="发现页" display-directive="show">
-                  <code-editor v-model="form.discovery_code" model-id="discovery_code" />
-                  <div class="absolute right-5 top-13 z-10">
-                    <n-button type="info" size="small" @click="onRun(form.discovery_code)">运行</n-button>
+        </div>
+
+        <!-- 脚本代码编辑器区 -->
+        <div class="pt-2">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+            沙箱解析脚本 (JavaScript ES6, 内置 axios & cheerio)
+          </label>
+          <div id="drawer-target" class="w-full border border-slate-200/60 dark:border-white/10 rounded-2xl overflow-hidden relative">
+            <n-tabs type="line" size="small" class="p-3 bg-slate-50/50 dark:bg-white/[0.02]">
+              <n-tab-pane name="1" tab="1. 发现页 (Discovery)" display-directive="show">
+                <div class="relative pt-2">
+                  <div class="absolute right-2 top-0 z-10">
+                    <button
+                      type="button"
+                      @click="onRun(form.discovery_code)"
+                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Play class="w-3 h-3 fill-current" />
+                      <span>测试运行</span>
+                    </button>
                   </div>
-                </n-tab-pane>
-                <n-tab-pane name="2" tab="搜索页" display-directive="show">
-                  <code-editor v-model="form.search_code" model-id="search_code" />
-                  <div class="absolute right-5 top-13 z-10">
-                    <n-button type="info" size="small" @click="onRun(form.search_code)">运行</n-button>
+                  <code-editor v-model="form.discovery_code" model-id="discovery_code" :height="380" />
+                </div>
+              </n-tab-pane>
+
+              <n-tab-pane name="2" tab="2. 搜索页 (Search)" display-directive="show">
+                <div class="relative pt-2">
+                  <div class="absolute right-2 top-0 z-10">
+                    <button
+                      type="button"
+                      @click="onRun(form.search_code)"
+                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Play class="w-3 h-3 fill-current" />
+                      <span>测试运行</span>
+                    </button>
                   </div>
-                </n-tab-pane>
-                <n-tab-pane name="3" tab="详情页" display-directive="show">
-                  <code-editor v-model="form.detail_code" model-id="detail_code" />
-                  <div class="absolute right-5 top-13 z-10">
-                    <n-button type="info" size="small" @click="onRun(form.detail_code)">运行</n-button>
+                  <code-editor v-model="form.search_code" model-id="search_code" :height="380" />
+                </div>
+              </n-tab-pane>
+
+              <n-tab-pane name="3" tab="3. 详情页 (Detail)" display-directive="show">
+                <div class="relative pt-2">
+                  <div class="absolute right-2 top-0 z-10">
+                    <button
+                      type="button"
+                      @click="onRun(form.detail_code)"
+                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Play class="w-3 h-3 fill-current" />
+                      <span>测试运行</span>
+                    </button>
                   </div>
-                </n-tab-pane>
-              </n-tabs>
-              <n-drawer to="#drawer-target" v-model:show="showDrawer" width="45%" placement="right">
-                <n-drawer-content title="运行结果" closable>
-                  <code-editor v-model="runResult" model-id="run_result" :height="460" />
-                </n-drawer-content>
-              </n-drawer>
-            </div>
-          </n-form-item>
-          <n-form-item>
-            <div class="flex gap-4">
-              <n-button block @click="onReset">
-                <template #icon>
-                  <n-icon :component="RefreshCcw" />
-                </template>
-                重置
-              </n-button>
-              <n-button block type="primary" :loading="submitLoading" @click="onSubmit">
-                <template #icon>
-                  <n-icon :component="Save" />
-                </template>
-                提交
-              </n-button>
-            </div>
-          </n-form-item>
-        </n-form>
-      </n-card>
+                  <code-editor v-model="form.detail_code" model-id="detail_code" :height="380" />
+                </div>
+              </n-tab-pane>
+            </n-tabs>
+
+            <!-- 运行结果抽屉 -->
+            <n-drawer to="#drawer-target" v-model:show="showDrawer" width="50%" placement="right">
+              <n-drawer-content title="沙箱执行日志与返回数据" closable>
+                <code-editor v-model="runResult" model-id="run_result" :height="420" />
+              </n-drawer-content>
+            </n-drawer>
+          </div>
+        </div>
+
+        <!-- 底部提交/重置工具条 -->
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200/50 dark:border-white/5 mt-6">
+          <button
+            type="button"
+            @click="onReset"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
+          >
+            <RefreshCcw class="w-3.5 h-3.5" />
+            <span>重置</span>
+          </button>
+          <button
+            type="button"
+            :disabled="submitLoading"
+            @click="onSubmit"
+            class="flex items-center gap-1.5 px-6 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Save class="w-3.5 h-3.5" />
+            <span>{{ submitLoading ? '保存中...' : '保存规则配置' }}</span>
+          </button>
+        </div>
+      </n-form>
     </div>
   </div>
 </template>
 
 <style scoped>
-.rule-card {
-  background: radial-gradient(26% 84% at 4% 4%, #dddce54d 0%, #f5f4f700 94%), #fff;
-  cursor: pointer;
-}
 </style>

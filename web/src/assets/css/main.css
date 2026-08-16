@@ -1,36 +1,154 @@
 @import './ui.css';
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+@layer base {
+  /* Light Theme Variables (Default) */
+  :root {
+    --bg-page: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.98);
+    --bg-input: rgba(241, 245, 249, 0.9);
+    --border-glass: rgba(0, 0, 0, 0.08);
+    --border-glass-hover: rgba(99, 102, 241, 0.4);
+    --primary: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.2);
+    --accent: #ec4899;
+    --accent-glow: rgba(236, 72, 153, 0.2);
+    --header-bg: rgba(255, 255, 255, 0.85);
+    --sub-bg: rgba(241, 245, 249, 0.7);
+  }
 
-  color-scheme: light dark;
+  /* Dark Theme Variables */
+  html.dark {
+    --bg-page: hsl(224, 25%, 3.8%);
+    --text-main: hsl(210, 40%, 98%);
+    --text-muted: hsl(215, 20%, 75%);
+    --bg-card: rgba(15, 20, 35, 0.6);
+    --bg-card-hover: rgba(24, 32, 55, 0.8);
+    --bg-input: rgba(8, 10, 18, 0.8);
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --border-glass-hover: rgba(255, 255, 255, 0.2);
+    --primary: hsl(239, 84%, 67%);
+    --primary-glow: rgba(99, 102, 241, 0.25);
+    --accent: hsl(330, 95%, 65%);
+    --accent-glow: rgba(236, 72, 153, 0.25);
+    --header-bg: rgba(10, 14, 26, 0.85);
+    --sub-bg: rgba(15, 20, 35, 0.65);
+  }
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-:root {
-  --app-bg: #f0f2f5;
-}
-
-html.dark {
-  --app-bg: #181818;
-  --main-bg: #212121;
-  --color-text: var(--vt-c-white);
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
 }
 
 #app {
   height: 100vh;
-  background-color: var(--app-bg);
+  background-color: var(--bg-page);
 }
 
-/* 修改滚动条样式 浏览器兼容性 Chrome: 121 Edge: 121 Firefox: 64 Safari: No */
+/* Glassmorphism & Adaptive Layout Panels */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-hover:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-glass-hover);
+  box-shadow: 0 12px 30px -10px var(--primary-glow);
+  transform: translateY(-2px);
+}
+
+.app-header {
+  background: var(--header-bg);
+}
+
+.app-sub-panel {
+  background: var(--sub-bg);
+  border: 1px solid var(--border-glass);
+}
+
+.app-input {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 1px solid var(--border-glass);
+}
+
+.glow-text-primary {
+  text-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--border-glass) 25%, var(--border-glass-hover) 50%, var(--border-glass) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* Ambient Glow Background Effect - Active in Dark Mode */
+html.dark .ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+html.dark .ambient-glow::before,
+html.dark .ambient-glow::after {
+  content: '';
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.08;
+  animation: float-aurora 35s ease-in-out infinite alternate;
+}
+
+html.dark .ambient-glow::before {
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, var(--primary), transparent 75%);
+}
+
+html.dark .ambient-glow::after {
+  bottom: -15%;
+  right: -10%;
+  background: radial-gradient(circle, var(--accent), transparent 75%);
+  animation-delay: -15s;
+}
+
+@keyframes float-aurora {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    transform: translate(10vw, 5vh) scale(1.15) rotate(120deg);
+  }
+}
+
+/* Scrollbar styles */
 .overflow-auto, .overflow-scroll, .overflow-x-auto, .overflow-x-scroll, .overflow-y-auto, .overflow-y-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #ececec transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
 .overflow-auto:hover, .overflow-scroll:hover, .overflow-x-auto:hover, .overflow-y-auto:hover {
-  scrollbar-color: #dfdfdf transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
 }
