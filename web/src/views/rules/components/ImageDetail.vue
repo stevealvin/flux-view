@@ -3,9 +3,15 @@ import { Image as ImageIcon } from '@lucide/vue'
 
 type Props = {
   images: any[]
+  title?: string
+  desc?: string
 }
 
-defineProps<Props>()
+withDefaults(defineProps<Props>(), {
+  images: () => [],
+  title: '',
+  desc: ''
+})
 
 const getImageUrl = (img: any): string => {
   if (typeof img === 'string') return img
@@ -14,25 +20,37 @@ const getImageUrl = (img: any): string => {
 </script>
 
 <template>
-  <div class="space-y-4 max-w-7xl mx-auto">
+  <div class="space-y-5 max-w-7xl mx-auto pb-12">
+    <!-- 图集介绍面板 (如有) -->
+    <div v-if="title || desc" class="glass-panel rounded-2xl p-5 space-y-2 shadow-sm">
+      <h2 v-if="title" class="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+        {{ title }}
+      </h2>
+      <p v-if="desc" class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+        {{ desc }}
+      </p>
+    </div>
+
+    <!-- 顶部状态栏 -->
     <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/50 dark:border-white/5">
       <div class="flex items-center gap-2">
         <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">
           图集画廊
-        </h2>
+        </h3>
       </div>
       <span class="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/30">
         共 {{ images.length }} 张（点击开启全屏预览）
       </span>
     </div>
 
+    <!-- 图片瀑布流网格 -->
     <n-image-group>
       <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         <div
           v-for="(img, index) in images"
           :key="index"
-          class="overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-100 dark:bg-slate-900 shadow-2xs hover:shadow-lg transition-all duration-300 relative group aspect-3/4 cursor-pointer"
+          class="overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-100 dark:bg-slate-900 shadow-2xs hover:shadow-lg transition-all duration-300 relative group aspect-[3/4] cursor-pointer"
         >
           <n-image
             :src="getImageUrl(img)"

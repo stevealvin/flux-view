@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref, useTemplateRef, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 defineOptions({ name: 'EditView' })
 import { useMessage } from 'naive-ui'
 import http from '@/utils/http'
-import { ruleService, type Rule } from '@/utils/ruleService'
-import { RefreshCcw, Save, ArrowLeft, Copy, Download, Play, Code } from '@lucide/vue'
+import { ruleService, type RuleSchema, type MediaType } from '@/utils/ruleService'
+import { RefreshCcw, Save, ArrowLeft, Copy, Download, Play, Code, Sparkles } from '@lucide/vue'
 import CodeEditor from '@/components/CodeEditor/index.vue'
 
 const route = useRoute()
@@ -14,23 +14,74 @@ const router = useRouter()
 const message = useMessage()
 
 const formRef = useTemplateRef('formRef')
-const form = ref<Partial<Rule>>({
+const form = ref<Partial<RuleSchema>>({
   name: '',
   description: '',
-  type: '视频',
-  discovery_code: `export default async () => {\n  \n}`,
-  search_code: `export default async () => {\n  \n}`,
-  detail_code: `export default async () => {\n  \n}`,
+  type: 'video',
   author: '系统管理员',
   version: '1.0.0',
-  base_url: '',
+  baseUrl: '',
+  code: `import axios from 'axios'
+import * as cheerio from 'cheerio'
+
+export default {
+  // 1. 发现流
+  async discovery({ category, page = 1 }) {
+    return {
+      categories: ['最新', '热门'],
+      items: [
+        {
+          key: 'item_1',
+          title: '示例项目',
+          cover: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500',
+          badge: '高清',
+          desc: '示例描述'
+        }
+      ],
+      hasMore: false
+    }
+  },
+
+  // 2. 搜索
+  async search({ keyword, page = 1 }) {
+    return {
+      items: [],
+      hasMore: false
+    }
+  },
+
+  // 3. 详情
+  async detail({ key, item }) {
+    return {
+      title: item?.title || '详情标题',
+      cover: item?.cover,
+      desc: '正文介绍',
+      tags: ['精选'],
+      media: {
+        type: 'video',
+        url: ''
+      }
+    }
+  },
+
+  // 4. 解析
+  async parse({ key }) {
+    return {
+      url: key
+    }
+  }
+}`
 })
+
+const testAction = ref<'discovery' | 'search' | 'detail' | 'parse'>('discovery')
+const testParam = ref('')
 const submitLoading = ref(false)
+const testing = ref(false)
 const showDrawer = ref(false)
 const runResult = ref('')
 
-const loadData = async () => {
-  let id = route.query.id
+const loadData = () => {
+  const id = route.query.id
   if (!id) return
   const result = ruleService.getRuleById(id as string)
   if (result) {
@@ -42,15 +93,12 @@ const onReset = () => {
   form.value = {
     name: '',
     description: '',
-    type: '视频',
-    discovery_code: 'export default async () => {\n  \n}',
-    search_code: 'export default async () => {\n  \n}',
-    detail_code: 'export default async () => {\n  \n}',
+    type: 'video',
     author: '系统管理员',
     version: '1.0.0',
-    base_url: '',
+    baseUrl: '',
+    code: `export default {\n  async discovery({ category, page = 1 }) {\n    return { items: [] }\n  }\n}`
   }
-  formRef.value?.restoreValidation()
 }
 
 const onSubmit = async () => {
@@ -72,15 +120,34 @@ const onSubmit = async () => {
   submitLoading.value = false
 }
 
-const onRun = async (code: string | undefined) => { 
-  if (!code) return
+const onRunTest = async () => {
+  if (!form.value.code) return
   showDrawer.value = true
-  runResult.value = '正在沙箱中执行规则...'
+  testing.value = true
+  runResult.value = `沙箱正在执行 [action: ${testAction.value}] ...`
+
   try {
-    let result = await http.post('/rules/run', { code })
+    let params: any = {}
+    if (testAction.value === 'discovery') {
+      params = { category: testParam.value || '', page: 1, baseUrl: form.value.baseUrl }
+    } else if (testAction.value === 'search') {
+      params = { keyword: testParam.value || 'test', page: 1, baseUrl: form.value.baseUrl }
+    } else if (testAction.value === 'detail') {
+      params = { key: testParam.value || 'test_key', baseUrl: form.value.baseUrl }
+    } else if (testAction.value === 'parse') {
+      params = { key: testParam.value || 'test_key', baseUrl: form.value.baseUrl }
+    }
+
+    const result = await http.post('/rules/execute', {
+      code: form.value.code,
+      action: testAction.value,
+      params
+    })
     runResult.value = JSON.stringify(result || {}, null, 2)
   } catch (error: any) {
     runResult.value = JSON.stringify(error?.response?.data || error?.message || error || {}, null, 2)
+  } finally {
+    testing.value = false
   }
 }
 
@@ -88,17 +155,8 @@ const copyRule = async () => {
   try {
     const { id, created_at, updated_at, ...rest } = form.value
     const jsonStr = JSON.stringify(rest, null, 2)
-    
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(jsonStr)
-      message.success('已复制当前规则配置到剪贴板')
-    } else {
-      const textArea = document.createElement('textarea')
-      textArea.value = jsonStr
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
       message.success('已复制当前规则配置到剪贴板')
     }
   } catch (error: any) {
@@ -125,11 +183,13 @@ const exportRule = () => {
   }
 }
 
-loadData()
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <template>
-  <div class="space-y-6 max-w-6xl mx-auto pb-10">
+  <div class="space-y-6 max-w-6xl mx-auto pb-12">
     <!-- 顶部操作栏 (mori-box 风格) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
       <div class="flex items-center gap-3">
@@ -172,16 +232,16 @@ loadData()
     <div class="glass-panel rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
       <n-form ref="formRef" :model="form">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <n-form-item label="规则标识名称" path="name" :rule="{ required: true, message: '请输入唯一英文或拼音标识' }">
-            <n-input v-model:value="form.name" clearable placeholder="如: b चरणों, javdb, bilibili" />
+          <n-form-item label="规则标识名称 *" path="name" :rule="{ required: true, message: '请输入规则名称' }">
+            <n-input v-model:value="form.name" clearable placeholder="如: 全面屏超清壁纸, JAVMENU" />
           </n-form-item>
-          <n-form-item label="媒体类型" path="type" :rule="{ required: true, message: '请选择规则媒体类型' }">
+          <n-form-item label="媒体类型 *" path="type" :rule="{ required: true, message: '请选择规则媒体类型' }">
             <n-select
               v-model:value="form.type"
               :options="[
-                { label: '视频', value: '视频' },
-                { label: '图片', value: '图片' },
-                { label: '小说', value: '小说' },
+                { label: '视频 (Video)', value: 'video' },
+                { label: '图片 (Picture)', value: 'picture' },
+                { label: '小说 (Novel)', value: 'novel' },
               ]"
               clearable
             />
@@ -193,76 +253,62 @@ loadData()
         </n-form-item>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <n-form-item label="作者" path="author" :rule="{ required: true, message: '请输入作者名称' }">
+          <n-form-item label="作者" path="author">
             <n-input v-model:value="form.author" clearable />
           </n-form-item>
-          <n-form-item label="版本号" path="version" :rule="{ required: true, message: '请输入版本号' }">
+          <n-form-item label="版本号" path="version">
             <n-input v-model:value="form.version" clearable placeholder="1.0.0" />
           </n-form-item>
-          <n-form-item label="基础地址" path="base_url">
-            <n-input v-model:value="form.base_url" clearable placeholder="https://example.com" />
+          <n-form-item label="目标站点根域名" path="baseUrl">
+            <n-input v-model:value="form.baseUrl" clearable placeholder="https://example.com" />
           </n-form-item>
         </div>
 
         <!-- 脚本代码编辑器区 -->
         <div class="pt-2">
-          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
-            沙箱解析脚本 (JavaScript ES6, 内置 axios & cheerio)
-          </label>
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">
+              标准 ESModule 沙箱脚本 (内置 axios & cheerio)
+            </label>
+            
+            <!-- 快速测试调试栏 -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400">动作:</span>
+              <select
+                v-model="testAction"
+                class="px-2 py-1 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-lg text-xs font-mono outline-none"
+              >
+                <option value="discovery">discovery()</option>
+                <option value="search">search()</option>
+                <option value="detail">detail()</option>
+                <option value="parse">parse()</option>
+              </select>
+
+              <input
+                v-model="testParam"
+                type="text"
+                placeholder="测试参数 (关键字/key/分类)..."
+                class="px-2.5 py-1 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-lg text-xs outline-none w-36 sm:w-48"
+              />
+
+              <button
+                type="button"
+                @click="onRunTest"
+                :disabled="testing"
+                class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Play class="w-3 h-3 fill-current" />
+                <span>{{ testing ? '运行中...' : '测试运行' }}</span>
+              </button>
+            </div>
+          </div>
+
           <div id="drawer-target" class="w-full border border-slate-200/60 dark:border-white/10 rounded-2xl overflow-hidden relative">
-            <n-tabs type="line" size="small" class="p-3 bg-slate-50/50 dark:bg-white/[0.02]">
-              <n-tab-pane name="1" tab="1. 发现页 (Discovery)" display-directive="show">
-                <div class="relative pt-2">
-                  <div class="absolute right-2 top-0 z-10">
-                    <button
-                      type="button"
-                      @click="onRun(form.discovery_code)"
-                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
-                    >
-                      <Play class="w-3 h-3 fill-current" />
-                      <span>测试运行</span>
-                    </button>
-                  </div>
-                  <code-editor v-model="form.discovery_code" model-id="discovery_code" :height="380" />
-                </div>
-              </n-tab-pane>
-
-              <n-tab-pane name="2" tab="2. 搜索页 (Search)" display-directive="show">
-                <div class="relative pt-2">
-                  <div class="absolute right-2 top-0 z-10">
-                    <button
-                      type="button"
-                      @click="onRun(form.search_code)"
-                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
-                    >
-                      <Play class="w-3 h-3 fill-current" />
-                      <span>测试运行</span>
-                    </button>
-                  </div>
-                  <code-editor v-model="form.search_code" model-id="search_code" :height="380" />
-                </div>
-              </n-tab-pane>
-
-              <n-tab-pane name="3" tab="3. 详情页 (Detail)" display-directive="show">
-                <div class="relative pt-2">
-                  <div class="absolute right-2 top-0 z-10">
-                    <button
-                      type="button"
-                      @click="onRun(form.detail_code)"
-                      class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer"
-                    >
-                      <Play class="w-3 h-3 fill-current" />
-                      <span>测试运行</span>
-                    </button>
-                  </div>
-                  <code-editor v-model="form.detail_code" model-id="detail_code" :height="380" />
-                </div>
-              </n-tab-pane>
-            </n-tabs>
+            <code-editor v-model="form.code" model-id="rule_code" :height="480" />
 
             <!-- 运行结果抽屉 -->
-            <n-drawer to="#drawer-target" v-model:show="showDrawer" width="50%" placement="right">
-              <n-drawer-content title="沙箱执行日志与返回数据" closable>
+            <n-drawer to="#drawer-target" v-model:show="showDrawer" width="55%" placement="right">
+              <n-drawer-content title="沙箱执行返回值与结构" closable>
                 <code-editor v-model="runResult" model-id="run_result" :height="420" />
               </n-drawer-content>
             </n-drawer>

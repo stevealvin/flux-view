@@ -46,8 +46,11 @@ const goToSource = (id: number) => {
 
 const getTypeIcon = (type: string) => {
   switch (type) {
+    case 'video':
     case '视频': return Video
+    case 'picture':
     case '图片': return ImageIcon
+    case 'novel':
     case '小说': return BookOpen
     default: return Compass
   }
@@ -55,8 +58,11 @@ const getTypeIcon = (type: string) => {
 
 const getTypeBadgeColor = (type: string) => {
   switch (type) {
+    case 'video':
     case '视频': return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+    case 'picture':
     case '图片': return 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20'
+    case 'novel':
     case '小说': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
     default: return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'
   }

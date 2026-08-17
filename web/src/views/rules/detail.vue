@@ -3,9 +3,8 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 defineOptions({ name: 'DetailView' })
-import http from '@/utils/http'
-import { ruleService } from '@/utils/ruleService'
-import { ArrowLeft, AlertCircle, Compass } from '@lucide/vue'
+import { ruleService, type RuleSchema, type MediaDetail, type MediaItem } from '@/utils/ruleService'
+import { ArrowLeft, AlertCircle, RefreshCw, Compass } from '@lucide/vue'
 import VideoDetail from './components/VideoDetail.vue'
 import ImageDetail from './components/ImageDetail.vue'
 import TextDetail from './components/TextDetail.vue'
@@ -13,111 +12,51 @@ import TextDetail from './components/TextDetail.vue'
 const route = useRoute()
 const router = useRouter()
 
-const rule = ref<any>(null)
-const mediaType = ref<'video' | 'images' | 'text' | null>(null)
-const videoUrl = ref('')
-const images = ref<any[]>([])
-const textContent = ref('')
-const relatedList = ref<any[]>([])
-const discoveryList = ref<any[]>([])
-const desc = ref('')
+const rule = ref<RuleSchema | null>(null)
+const detail = ref<MediaDetail | null>(null)
 const loading = ref(true)
 const executing = ref(false)
 const errorMsg = ref('')
 
 const loadDetail = async () => {
   loading.value = true
+  executing.value = true
   errorMsg.value = ''
-  videoUrl.value = ''
-  images.value = []
-  textContent.value = ''
-  relatedList.value = []
-  discoveryList.value = []
-  desc.value = ''
-  
+  detail.value = null
+
   const ruleId = Number(route.query.ruleId)
-  const href = route.query.href as string
-  
-  if (!ruleId || !href) {
-    errorMsg.value = '无效的参数'
+  const key = (route.query.key as string) || (route.query.href as string) || (route.query.url as string)
+
+  if (!ruleId || !key) {
+    errorMsg.value = '缺少必要的请求参数 (ruleId 或 key)'
     loading.value = false
+    executing.value = false
     return
   }
 
   try {
     const ruleRes = ruleService.getRuleById(ruleId)
     rule.value = ruleRes
-    
+
     if (!rule.value) {
-      errorMsg.value = '解析规则未找到'
+      errorMsg.value = '对应的解析规则未找到，可能已被删除'
       loading.value = false
+      executing.value = false
       return
     }
 
-    let itemContext = null
-    if (route.query.item) {
-      try {
-        itemContext = JSON.parse(route.query.item as string)
-      } catch (e) {
-        console.error('Failed to parse item query context:', e)
-      }
-    }
-    if (!itemContext) {
-      itemContext = {
-        href,
-        title: route.query.title,
-        cover: route.query.cover
-      }
+    const itemContext: Partial<MediaItem> = {
+      key,
+      title: route.query.title as string,
+      cover: route.query.cover as string
     }
 
-    executing.value = true
-    const res = await http.post('/rules/run', {
-      code: rule.value.detail_code,
-      context: { 
-        href,
-        title: route.query.title,
-        cover: route.query.cover,
-        item: itemContext
-      }
+    const res = await ruleService.runDetail(rule.value, {
+      key,
+      item: itemContext
     })
 
-    if (rule.value.type === '视频' || (res && res.videoUrl)) {
-      mediaType.value = 'video'
-      videoUrl.value = res.videoUrl || ''
-      relatedList.value = res.list || []
-      discoveryList.value = res.discovery || []
-      images.value = res.images || []
-      desc.value = res.desc || res.description || ''
-    } else if (rule.value.type === '图片' || Array.isArray(res)) {
-      mediaType.value = 'images'
-      if (Array.isArray(res)) {
-        images.value = res
-      } else if (res && typeof res === 'object') {
-        images.value = res.images || res.list || []
-      }
-    } else if (rule.value.type === '小说' || (res && (res.content || res.text))) {
-      mediaType.value = 'text'
-      textContent.value = res.content || res.text || ''
-      relatedList.value = res.list || res.chapters || []
-    } else {
-      if (res && res.videoUrl) {
-        mediaType.value = 'video'
-        videoUrl.value = res.videoUrl
-        relatedList.value = res.list || []
-        discoveryList.value = res.discovery || []
-        images.value = res.images || []
-        desc.value = res.desc || res.description || ''
-      } else if (Array.isArray(res)) {
-        mediaType.value = 'images'
-        images.value = res
-      } else if (res && (res.content || res.text)) {
-        mediaType.value = 'text'
-        textContent.value = res.content || res.text
-        relatedList.value = res.list || res.chapters || []
-      } else {
-        errorMsg.value = '不支持的媒体格式或规则解析返回数据为空'
-      }
-    }
+    detail.value = res
   } catch (error: any) {
     errorMsg.value = '抓取媒体详情失败: ' + (error.response?.data?.message || error.message || error)
   } finally {
@@ -126,20 +65,19 @@ const loadDetail = async () => {
   }
 }
 
-const goToRelated = (item: any) => {
+const goToRelated = (item: MediaItem) => {
   router.push({
     path: '/rules/detail',
     query: {
       ruleId: route.query.ruleId,
-      href: item.href || item.url,
+      key: item.key,
       title: item.title,
-      cover: item.cover,
-      item: JSON.stringify(item)
+      cover: item.cover
     }
   })
 }
 
-watch([() => route.query.href, () => route.query.ruleId], () => {
+watch([() => route.query.key, () => route.query.href, () => route.query.ruleId], () => {
   loadDetail()
 })
 
@@ -149,7 +87,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-7xl mx-auto pb-10">
+  <div class="space-y-6 max-w-7xl mx-auto pb-12">
     <!-- 顶部操作栏 (mori-box 风格) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
@@ -162,13 +100,23 @@ onMounted(() => {
         </button>
         <div class="min-w-0">
           <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white truncate">
-            {{ route.query.title || '媒体详情播放' }}
+            {{ detail?.title || (route.query.title as string) || '媒体详情播放' }}
           </h1>
           <p class="text-xs text-slate-500 dark:text-slate-400" v-if="rule">
-            来源: {{ rule.title || rule.name }} • {{ rule.type }}
+            来源: {{ rule.name }} • {{ rule.type === 'video' ? '视频' : rule.type === 'picture' ? '图片' : '小说' }}
           </p>
         </div>
       </div>
+
+      <!-- 刷新按钮 -->
+      <button
+        @click="loadDetail"
+        :disabled="executing"
+        class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer disabled:opacity-50"
+        title="重新解析"
+      >
+        <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': executing }" />
+      </button>
     </div>
 
     <!-- 主展示面板 -->
@@ -176,7 +124,7 @@ onMounted(() => {
       <!-- 加载状态 -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-28 gap-3">
         <n-spin size="large" />
-        <span class="text-slate-400 text-sm">正在加载并解析媒体播放地址...</span>
+        <span class="text-slate-400 text-sm">沙箱正在解析媒体播放与正文数据...</span>
       </div>
 
       <!-- 错误状态 -->
@@ -191,34 +139,33 @@ onMounted(() => {
           @click="loadDetail"
           class="mt-3 px-4 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer"
         >
-          重试
+          重新尝试
         </button>
       </div>
 
-      <!-- 媒体内容面板 -->
-      <div v-else class="w-full">
+      <!-- 媒体内容面板 (多态分发) -->
+      <div v-else-if="detail" class="w-full">
+        <!-- 1. 视频播放器与选集 -->
         <VideoDetail
-          v-if="mediaType === 'video'"
-          :video-url="videoUrl"
-          :title="route.query.title as string"
-          :desc="desc"
-          :images="images"
-          :discovery="discoveryList"
-          :list="relatedList"
+          v-if="detail.media?.type === 'video' || rule?.type === 'video'"
+          :detail="detail"
+          :rule="rule || undefined"
           @select="goToRelated"
         />
 
+        <!-- 2. 图集画廊 -->
         <ImageDetail
-          v-else-if="mediaType === 'images'"
-          :images="images"
+          v-else-if="detail.media?.type === 'picture' || rule?.type === 'picture'"
+          :images="detail.media?.images || []"
+          :title="detail.title"
+          :desc="detail.desc"
         />
 
+        <!-- 3. 小说阅读器与章节 -->
         <TextDetail
-          v-else-if="mediaType === 'text'"
-          :title="route.query.title as string"
-          :text-content="textContent"
-          :related-list="relatedList"
-          @select="goToRelated"
+          v-else-if="detail.media?.type === 'novel' || rule?.type === 'novel'"
+          :detail="detail"
+          :rule="rule || undefined"
         />
       </div>
     </div>

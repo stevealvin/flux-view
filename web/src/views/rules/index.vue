@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, h } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 defineOptions({ name: 'RulesView' })
-import { useMessage, NIcon } from 'naive-ui'
-import { ruleService } from '@/utils/ruleService'
+import { useMessage } from 'naive-ui'
+import { ruleService, type RuleSchema } from '@/utils/ruleService'
 import {
   RefreshCcw,
   Search as SearchIcon,
@@ -20,7 +20,8 @@ import {
   Image as ImageIcon,
   BookOpen,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from '@lucide/vue'
 
 const router = useRouter()
@@ -30,7 +31,7 @@ const form = ref({
   name: '',
   type: ''
 })
-const list = ref<any[]>([])
+const list = ref<RuleSchema[]>([])
 const loading = ref(false)
 
 // 导入导出相关的状态
@@ -38,20 +39,19 @@ const showImportModal = ref(false)
 const importText = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const loadData = async () => {
+const loadData = () => {
   loading.value = true
   try {
     let data = ruleService.getRules()
-    
-    // 客户端本地过滤
+
     if (form.value.name.trim()) {
       const searchName = form.value.name.toLowerCase().trim()
-      data = data.filter((r: any) => r.name?.toLowerCase().includes(searchName) || r.title?.toLowerCase().includes(searchName))
+      data = data.filter((r) => r.name?.toLowerCase().includes(searchName))
     }
     if (form.value.type) {
-      data = data.filter((r: any) => r.type === form.value.type)
+      data = data.filter((r) => r.type === form.value.type)
     }
-    
+
     list.value = data
   } catch (error) {
     console.error('Failed to load rules:', error)
@@ -71,26 +71,26 @@ const onSearch = () => {
   loadData()
 }
 
-const onGoto = (row: any) => {
+const onGoto = (row: RuleSchema) => {
   router.push(`/rules/edit?id=${row.id}`)
 }
 
-const toggleRule = async (row: any, val: boolean) => {
+const toggleRule = (row: RuleSchema, val: boolean) => {
   try {
     const nextVal = val ? 1 : 0
     ruleService.toggleRuleEnabled(row.id, nextVal)
     row.enabled = nextVal
-    message.success(val ? `已启用规则: ${row.title || row.name}` : `已禁用规则: ${row.title || row.name}`)
+    message.success(val ? `已启用规则: ${row.name}` : `已禁用规则: ${row.name}`)
   } catch (error) {
     console.error('Failed to toggle rule state:', error)
     message.error('操作失败')
   }
 }
 
-const deleteRule = async (row: any) => {
+const deleteRule = (row: RuleSchema) => {
   try {
     ruleService.deleteRule(row.id)
-    message.success(`已成功删除规则: ${row.title || row.name}`)
+    message.success(`已成功删除规则: ${row.name}`)
     loadData()
   } catch (error) {
     console.error('Failed to delete rule:', error)
@@ -98,8 +98,18 @@ const deleteRule = async (row: any) => {
   }
 }
 
+const resetDefaults = () => {
+  try {
+    ruleService.resetToSeedRules()
+    message.success('已成功重置为官方预置规则')
+    loadData()
+  } catch (e: any) {
+    message.error('重置失败: ' + e.message)
+  }
+}
+
 // 导出/备份规则
-const exportRules = (rulesToExport: any[], filename: string) => {
+const exportRules = (rulesToExport: RuleSchema[], filename: string) => {
   try {
     const cleaned = rulesToExport.map(({ id, created_at, updated_at, ...rest }) => rest)
     const jsonStr = JSON.stringify(cleaned, null, 2)
@@ -118,14 +128,12 @@ const exportRules = (rulesToExport: any[], filename: string) => {
   }
 }
 
-// 单个规则导出
-const exportSingleRule = (row: any) => {
+const exportSingleRule = (row: RuleSchema) => {
   const filename = `${row.name || 'rule'}_backup.json`
   exportRules([row], filename)
 }
 
-// 复制单个规则到剪贴板
-const copySingleRule = async (row: any) => {
+const copySingleRule = async (row: RuleSchema) => {
   try {
     const { id, created_at, updated_at, ...rest } = row
     const jsonStr = JSON.stringify(rest, null, 2)
@@ -139,13 +147,12 @@ const copySingleRule = async (row: any) => {
       document.execCommand('copy')
       document.body.removeChild(textArea)
     }
-    message.success(`已复制规则 [${row.title || row.name}]`)
+    message.success(`已复制规则 [${row.name}]`)
   } catch (error: any) {
     message.error('复制失败: ' + error.message)
   }
 }
 
-// 全部导出
 const exportAllRules = () => {
   if (list.value.length === 0) {
     message.warning('当前列表中没有可导出的规则')
@@ -155,12 +162,10 @@ const exportAllRules = () => {
   exportRules(list.value, `flux_view_rules_all_${dateStr}.json`)
 }
 
-// 导入 JSON 文件触发
 const triggerFileInput = () => {
   fileInputRef.value?.click()
 }
 
-// 处理导入文件
 const handleFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
@@ -180,12 +185,11 @@ const handleFileChange = (e: Event) => {
   reader.readAsText(file)
 }
 
-// 解析导入内容并写入
 const processImportJson = (jsonString: string) => {
   try {
     const parsed = JSON.parse(jsonString)
     const ruleArray = Array.isArray(parsed) ? parsed : [parsed]
-    
+
     if (ruleArray.length === 0) {
       message.warning('文件中未包含有效的规则数据')
       return
@@ -194,18 +198,19 @@ const processImportJson = (jsonString: string) => {
     let successCount = 0
     ruleArray.forEach((item: any) => {
       if (item && item.name) {
+        let mappedType: any = item.type || 'video'
+        if (item.type === '视频') mappedType = 'video'
+        if (item.type === '图片') mappedType = 'picture'
+        if (item.type === '小说') mappedType = 'novel'
+
         ruleService.saveRule({
           name: item.name,
-          title: item.title || item.name,
-          type: item.type || '视频',
+          type: mappedType,
           version: item.version || '1.0.0',
-          author: item.author || '',
+          author: item.author || '管理员',
           description: item.description || '',
-          base_url: item.base_url || '',
-          discovery_code: item.discovery_code || '',
-          search_code: item.search_code || '',
-          detail_code: item.detail_code || '',
-          ext: item.ext || '',
+          baseUrl: item.baseUrl || item.base_url || '',
+          code: item.code || item.discovery_code || '',
           enabled: item.enabled !== undefined ? (item.enabled ? 1 : 0) : 1
         })
         successCount++
@@ -229,167 +234,147 @@ const submitTextImport = () => {
   processImportJson(importText.value)
 }
 
-const renderIcon = (icon: any) => {
-  return () => h(NIcon, null, { default: () => h(icon) })
-}
-
-const dropdownOptions = [
-  {
-    label: '导入规则 (文件/文本)',
-    key: 'import',
-    icon: renderIcon(Upload)
-  },
-  {
-    label: '复制全部规则 (剪贴板)',
-    key: 'copy_all',
-    icon: renderIcon(Copy)
-  },
-  {
-    label: '导出全部规则 (JSON文件)',
-    key: 'export_all',
-    icon: renderIcon(Download)
-  }
-]
-
-const handleDropdownSelect = (key: string) => {
-  if (key === 'import') {
-    showImportModal.value = true
-  } else if (key === 'copy_all') {
-    copyAllRulesToClipboard()
-  } else if (key === 'export_all') {
-    exportAllRules()
-  }
-}
-
-const copyAllRulesToClipboard = async () => {
-  try {
-    if (list.value.length === 0) {
-      message.warning('当前列表中没有可复制的规则')
-      return
-    }
-    const cleaned = list.value.map(({ id, created_at, updated_at, ...rest }) => rest)
-    const jsonStr = JSON.stringify(cleaned, null, 2)
-    
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(jsonStr)
-      message.success('已成功将所有规则配置复制到剪贴板')
-    }
-  } catch (error: any) {
-    message.error('复制全部规则失败: ' + error.message)
-  }
-}
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case '视频': return Video
-    case '图片': return ImageIcon
-    case '小说': return BookOpen
-    default: return Compass
-  }
+const getCategoryIcon = (type: string) => {
+  if (type === 'video' || type === '视频') return Video
+  if (type === 'picture' || type === '图片') return ImageIcon
+  if (type === 'novel' || type === '小说') return BookOpen
+  return Compass
 }
 
 loadData()
 </script>
 
 <template>
-  <div class="space-y-6 max-w-7xl mx-auto pb-10">
-    <!-- 现代头部与过滤控制面板 (mori-box 风格) -->
-    <div class="glass-panel rounded-2xl p-5 space-y-4 shadow-sm">
+  <div class="space-y-6 max-w-7xl mx-auto pb-12">
+    <!-- 顶部操作栏与统计 (mori-box 风格) -->
+    <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- 搜索与类型过滤 -->
-        <div class="flex flex-wrap items-center gap-3 flex-1 min-w-0">
-          <div class="w-full sm:w-60">
-            <n-input v-model:value="form.name" placeholder="搜索规则名称..." clearable @keyup.enter="onSearch" />
+        <!-- 页面标题与统计 -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 flex-shrink-0">
+            <Archive class="w-5 h-5" />
           </div>
-          <div class="w-full sm:w-40">
-            <n-select
-              v-model:value="form.type"
-              placeholder="所有媒体类型"
-              clearable
-              :options="[
-                { label: '视频', value: '视频' },
-                { label: '图片', value: '图片' },
-                { label: '小说', value: '小说' },
-              ]"
-              @update:value="onSearch"
-            />
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="onSearch"
-              class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
-            >
-              <SearchIcon class="w-3.5 h-3.5" />
-              <span>查询</span>
-            </button>
-            <button
-              @click="onReset"
-              class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
-            >
-              <RefreshCcw class="w-3.5 h-3.5" />
-              <span>重置</span>
-            </button>
+          <div>
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              <span>规则引擎管理</span>
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+                ENGINE HUB
+              </span>
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              管理系统内置与自定义的 JavaScript 沙箱抓取与解析规则
+            </p>
           </div>
         </div>
 
-        <!-- 批量操作与增加规则按钮 -->
-        <div class="flex items-center gap-2.5">
-          <n-dropdown trigger="click" :options="dropdownOptions" @select="handleDropdownSelect">
-            <button class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200/50 dark:border-indigo-800/30 transition-all cursor-pointer">
-              <Archive class="w-3.5 h-3.5" />
-              <span>导入/导出</span>
-            </button>
-          </n-dropdown>
+        <!-- 动作按钮组 (新建、导入、导出、重置预置) -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            @click="resetDefaults"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
+            title="重置回默认预置规则"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">重置预置</span>
+          </button>
 
           <button
-            @click="$router.push('/rules/edit')"
-            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
+            @click="showImportModal = true"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
+          >
+            <Upload class="w-3.5 h-3.5" />
+            <span>导入规则</span>
+          </button>
+
+          <button
+            @click="exportAllRules"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
+          >
+            <Download class="w-3.5 h-3.5" />
+            <span>备份导出</span>
+          </button>
+
+          <button
+            @click="router.push('/rules/edit')"
+            class="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
             <Plus class="w-4 h-4" />
             <span>新建规则</span>
           </button>
         </div>
       </div>
+
+      <!-- 检索与筛选栏 -->
+      <div class="pt-3 border-t border-slate-200/50 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <input
+            v-model="form.name"
+            type="text"
+            placeholder="搜索规则名称..."
+            @keyup.enter="onSearch"
+            class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all w-44"
+          />
+
+          <select
+            v-model="form.type"
+            @change="onSearch"
+            class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+          >
+            <option value="">全部类型</option>
+            <option value="video">视频 (Video)</option>
+            <option value="picture">图片 (Picture)</option>
+            <option value="novel">小说 (Novel)</option>
+          </select>
+
+          <button
+            @click="onSearch"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all cursor-pointer shadow-xs"
+          >
+            筛选
+          </button>
+
+          <button
+            @click="onReset"
+            class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+          >
+            重置
+          </button>
+        </div>
+
+        <span class="text-xs text-slate-400">
+          已加载 <strong class="text-indigo-600 dark:text-indigo-400">{{ list.length }}</strong> 条规则
+        </span>
+      </div>
     </div>
 
-    <!-- 规则卡片列表 -->
+    <!-- 规则卡片网格列表 (mori-box 风格) -->
     <div class="space-y-4">
-      <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3">
-        <n-spin size="large" />
-        <span class="text-slate-400 text-sm">正在加载规则源...</span>
+      <div v-if="list.length === 0" class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3">
+        <Compass class="w-10 h-10 text-slate-400" />
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">没有找到规则</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">可以点击上方“新建规则”或“重置预置”导入规则。</p>
       </div>
 
-      <div
-        v-else-if="list.length === 0"
-        class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
-      >
-        <Sparkles class="w-10 h-10 text-slate-400" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">暂无符合条件的规则</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">请尝试更换筛选条件或点击右上角“新建规则”。</p>
-      </div>
-
-      <!-- 规则卡片网格 (mori-box 风格) -->
-      <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
-          v-for="row in list"
-          :key="row.id"
-          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group"
+          v-for="rule in list"
+          :key="rule.id"
+          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group relative"
         >
-          <!-- 卡片上部分：名称、开关、作者与描述 -->
+          <!-- 上半部：图标、名称、开关、描述 -->
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <component :is="getTypeIcon(row.type)" class="w-5 h-5" />
+                  <component :is="getCategoryIcon(rule.type)" class="w-5 h-5" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" :title="row.title || row.name">
-                    {{ row.title || row.name }}
+                  <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {{ rule.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500">v{{ row.version || '1.0.0' }}</span>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
-                      {{ row.type }}
+                    <span class="text-[10px] font-mono text-slate-400">
+                      v{{ rule.version || '1.0.0' }} • {{ rule.type === 'video' ? '视频' : rule.type === 'picture' ? '图片' : '小说' }}
                     </span>
                   </div>
                 </div>
@@ -397,48 +382,44 @@ loadData()
 
               <!-- 启用状态 Switch 开关 -->
               <n-switch
-                :value="row.enabled === 1 || row.enabled === true"
-                size="medium"
-                @update:value="(val) => toggleRule(row, val)"
+                :value="rule.enabled === 1 || (rule.enabled as any) === true"
+                size="small"
+                @update:value="(val: boolean) => toggleRule(rule, val)"
               />
             </div>
 
-            <!-- 描述 -->
+            <!-- 规则描述 -->
             <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-              {{ row.description || '暂无描述信息' }}
+              {{ rule.description || '暂无详细描述信息' }}
             </p>
+
+            <!-- 站点域名 -->
+            <div v-if="rule.baseUrl" class="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1">
+              <span class="opacity-60">源站:</span>
+              <span class="truncate">{{ rule.baseUrl }}</span>
+            </div>
           </div>
 
-          <!-- 卡片下部分：操作动作工具条 -->
-          <div class="pt-3 mt-4 border-t border-slate-200/50 dark:border-white/5 flex items-center justify-between text-xs">
-            <div class="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]">
-              <span>{{ row.author || '系统' }}</span>
-            </div>
-
-            <!-- 操作按钮组 -->
+          <!-- 下半部：动作栏 (编辑、复制、导出、删除) -->
+          <div class="pt-4 mt-4 border-t border-slate-200/50 dark:border-white/5 flex items-center justify-between text-xs">
             <div class="flex items-center gap-1">
               <button
-                @click="onGoto(row)"
-                class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                title="编辑规则"
-              >
-                <EditIcon class="w-3.5 h-3.5" />
-              </button>
-              <button
-                @click="copySingleRule(row)"
-                class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                title="复制 JSON"
+                @click="copySingleRule(rule)"
+                class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                title="复制规则 JSON"
               >
                 <Copy class="w-3.5 h-3.5" />
               </button>
+
               <button
-                @click="exportSingleRule(row)"
-                class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                @click="exportSingleRule(rule)"
+                class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 title="导出规则文件"
               >
                 <Download class="w-3.5 h-3.5" />
               </button>
-              <n-popconfirm @positive-click="deleteRule(row)">
+
+              <n-popconfirm @positive-click="deleteRule(rule)">
                 <template #trigger>
                   <button
                     class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
@@ -447,40 +428,57 @@ loadData()
                     <Trash2 class="w-3.5 h-3.5" />
                   </button>
                 </template>
-                确定要删除规则 "{{ row.title || row.name }}" 吗？
+                确定要删除规则「{{ rule.name }}」吗？
               </n-popconfirm>
             </div>
+
+            <!-- 编辑配置主按钮 -->
+            <button
+              @click="onGoto(rule)"
+              class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200/50 dark:border-indigo-800/30 transition-all cursor-pointer"
+            >
+              <EditIcon class="w-3.5 h-3.5" />
+              <span>编辑配置</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 导入规则 Modal 弹窗 -->
-    <n-modal v-model:show="showImportModal" preset="card" title="导入规则 (JSON)" class="max-w-xl">
+    <!-- 导入规则弹窗 Modal -->
+    <n-modal v-model:show="showImportModal" preset="card" title="导入规则配置" class="max-w-xl">
       <div class="space-y-4">
         <div>
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+            方式一：从本地选择 JSON 文件
+          </label>
+          <input
+            type="file"
+            ref="fileInputRef"
+            accept=".json"
+            class="hidden"
+            @change="handleFileChange"
+          />
           <button
             @click="triggerFileInput"
-            class="w-full py-6 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900/40 hover:bg-indigo-50/20 transition-colors cursor-pointer"
+            class="w-full py-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-indigo-500 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 flex items-center justify-center gap-2 transition-all cursor-pointer bg-slate-50/50 dark:bg-white/[0.02]"
           >
-            <Upload class="w-8 h-8 text-indigo-500" />
-            <span class="text-xs font-bold text-slate-700 dark:text-slate-200">点击选择本地 JSON 规则文件</span>
-            <span class="text-[10px] text-slate-400">支持单个规则或批量规则数组文件</span>
+            <Upload class="w-4 h-4" />
+            <span>点击选择本地规则 .json 备份文件</span>
           </button>
-          <input ref="fileInputRef" type="file" accept=".json" class="hidden" @change="handleFileChange" />
         </div>
 
-        <div class="relative flex items-center justify-center">
-          <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
-          <span class="bg-white dark:bg-slate-900 px-3 text-xs text-slate-400 absolute">或者直接粘贴 JSON</span>
+        <div>
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+            方式二：粘贴规则 JSON 文本
+          </label>
+          <n-input
+            v-model:value="importText"
+            type="textarea"
+            placeholder="在此粘贴包含单条或多条规则的 JSON 字符串..."
+            :rows="6"
+          />
         </div>
-
-        <n-input
-          v-model:value="importText"
-          type="textarea"
-          placeholder="在此粘贴规则 JSON 内容..."
-          :rows="6"
-        />
 
         <div class="flex justify-end gap-2 pt-2">
           <button
@@ -493,7 +491,7 @@ loadData()
             @click="submitTextImport"
             class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
-            确认导入
+            导入所填规则
           </button>
         </div>
       </div>

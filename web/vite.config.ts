@@ -40,10 +40,10 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 4000,
+    port: 5300,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:7001',
+        target: 'http://127.0.0.1:7300',
         changeOrigin: true,
       }
     }
