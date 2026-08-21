@@ -6,12 +6,30 @@ import fs from 'node:fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const resourcesDir = resolve(__dirname, '../resources');
-if (!fs.existsSync(resourcesDir)) {
-  fs.mkdirSync(resourcesDir, { recursive: true });
+function resolveDbPath(): string {
+  const currentDir = process.cwd();
+  // 检查根目录或 server 目录下的 resources
+  const candidates = [
+    resolve(__dirname, '../resources'),
+    resolve(currentDir, 'server/resources'),
+    resolve(currentDir, 'resources'),
+    resolve('/tmp', 'flux-view-resources')
+  ];
+
+  for (const dir of candidates) {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      return resolve(dir, 'sqlite.db');
+    } catch {
+      continue;
+    }
+  }
+  return ':memory:';
 }
 
-const dbPath = resolve(resourcesDir, 'sqlite.db');
+const dbPath = resolveDbPath();
 export const db = new Database(dbPath);
 
 // 初始化规则表并自动迁移新字段

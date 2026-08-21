@@ -79,10 +79,10 @@ const nextChapter = () => {
         />
         <div class="space-y-2 flex-1 min-w-0">
           <div class="flex flex-wrap items-center gap-2">
-            <h1 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+            <h1 class="text-lg sm:text-xl font-black text-zinc-900 dark:text-white">
               {{ detail.title }}
             </h1>
-            <span v-if="detail.author" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200/40 dark:border-indigo-800/30">
+            <span v-if="detail.author" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200/40 dark:border-emerald-800/30">
               作者: {{ detail.author }}
             </span>
           </div>
@@ -110,53 +110,65 @@ const nextChapter = () => {
 
         <div class="flex items-center gap-3 text-xs">
           <!-- 背景主题 -->
-          <div class="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-xl border border-slate-200/60 dark:border-white/5">
-            <button
+          <div class="flex items-center gap-1 bg-emerald-50/60 dark:bg-white/[0.04] p-1 rounded-xl border border-emerald-100/60 dark:border-white/5">
+            <n-button
+              size="tiny"
+              :type="readingTheme === 'default' ? 'primary' : 'default'"
+              :secondary="readingTheme !== 'default'"
+              class="!rounded-lg"
               @click="readingTheme = 'default'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingTheme === 'default' ? 'bg-indigo-600 text-white' : 'text-slate-500'"
             >
               默认
-            </button>
-            <button
+            </n-button>
+            <n-button
+              size="tiny"
+              :type="readingTheme === 'sepia' ? 'warning' : 'default'"
+              :secondary="readingTheme !== 'sepia'"
+              class="!rounded-lg"
               @click="readingTheme = 'sepia'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingTheme === 'sepia' ? 'bg-amber-600 text-white' : 'text-slate-500'"
             >
               羊皮纸
-            </button>
-            <button
+            </n-button>
+            <n-button
+              size="tiny"
+              :type="readingTheme === 'dark' ? 'primary' : 'default'"
+              :secondary="readingTheme !== 'dark'"
+              class="!rounded-lg"
               @click="readingTheme = 'dark'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingTheme === 'dark' ? 'bg-slate-700 text-white' : 'text-slate-500'"
             >
               夜间
-            </button>
+            </n-button>
           </div>
 
           <!-- 字号控制 -->
-          <div class="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-xl border border-slate-200/60 dark:border-white/5">
-            <button
+          <div class="flex items-center gap-1 bg-emerald-50/60 dark:bg-white/[0.04] p-1 rounded-xl border border-emerald-100/60 dark:border-white/5">
+            <n-button
+              size="tiny"
+              :type="readingFontSize === 'small' ? 'primary' : 'default'"
+              :secondary="readingFontSize !== 'small'"
+              class="!rounded-lg"
               @click="readingFontSize = 'small'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingFontSize === 'small' ? 'bg-indigo-600 text-white' : 'text-slate-500'"
             >
               小
-            </button>
-            <button
+            </n-button>
+            <n-button
+              size="tiny"
+              :type="readingFontSize === 'medium' ? 'primary' : 'default'"
+              :secondary="readingFontSize !== 'medium'"
+              class="!rounded-lg"
               @click="readingFontSize = 'medium'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingFontSize === 'medium' ? 'bg-indigo-600 text-white' : 'text-slate-500'"
             >
               中
-            </button>
-            <button
+            </n-button>
+            <n-button
+              size="tiny"
+              :type="readingFontSize === 'large' ? 'primary' : 'default'"
+              :secondary="readingFontSize !== 'large'"
+              class="!rounded-lg"
               @click="readingFontSize = 'large'"
-              class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              :class="readingFontSize === 'large' ? 'bg-indigo-600 text-white' : 'text-slate-500'"
             >
               大
-            </button>
+            </n-button>
           </div>
         </div>
       </div>
@@ -164,7 +176,7 @@ const nextChapter = () => {
       <!-- 解析加载动画 -->
       <div v-if="parsing" class="py-20 flex flex-col items-center justify-center gap-3">
         <n-spin size="large" />
-        <span class="text-xs text-slate-400">正在抓取并清洗章节正文...</span>
+        <span class="text-xs text-zinc-400">正在抓取并清洗章节正文...</span>
       </div>
 
       <!-- 错误提示 -->
@@ -186,38 +198,46 @@ const nextChapter = () => {
       </div>
 
       <!-- 翻章操作栏 -->
-      <div v-if="allChapters.length > 0" class="pt-6 border-t border-slate-200/50 dark:border-white/10 flex items-center justify-between">
-        <button
-          @click="prevChapter"
+      <div v-if="allChapters.length > 0" class="pt-6 border-t border-emerald-100/50 dark:border-white/10 flex items-center justify-between">
+        <n-button
+          size="small"
+          secondary
+          class="!rounded-xl !font-bold"
           :disabled="currentIndex() <= 0"
-          class="flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-indigo-600 hover:text-white border border-slate-200/60 dark:border-white/5 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+          @click="prevChapter"
         >
-          <ChevronLeft class="w-4 h-4" />
+          <template #icon>
+            <ChevronLeft class="w-4 h-4" />
+          </template>
           <span>上一章</span>
-        </button>
+        </n-button>
 
-        <span class="text-xs font-mono text-slate-400">
+        <span class="text-xs font-mono text-zinc-400">
           {{ currentIndex() + 1 }} / {{ allChapters.length }}
         </span>
 
-        <button
-          @click="nextChapter"
+        <n-button
+          size="small"
+          secondary
+          class="!rounded-xl !font-bold"
           :disabled="currentIndex() >= allChapters.length - 1"
-          class="flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-indigo-600 hover:text-white border border-slate-200/60 dark:border-white/5 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+          @click="nextChapter"
         >
           <span>下一章</span>
-          <ChevronRight class="w-4 h-4" />
-        </button>
+          <template #icon>
+            <ChevronRight class="w-4 h-4" />
+          </template>
+        </n-button>
       </div>
     </div>
 
     <!-- 章节目录网格 -->
     <div v-if="detail.groups && detail.groups.length > 0" class="space-y-4">
       <div v-for="group in detail.groups" :key="group.name" class="space-y-3">
-        <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/50 dark:border-white/5">
+        <div class="flex items-center justify-between pb-1.5 border-b border-emerald-100/50 dark:border-white/5">
           <div class="flex items-center gap-2">
-            <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+            <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500"></div>
+            <h2 class="text-sm font-bold text-zinc-800 dark:text-zinc-100">
               {{ group.name }} (共 {{ group.items.length }} 章)
             </h2>
           </div>
@@ -229,8 +249,8 @@ const nextChapter = () => {
             :key="item.key"
             class="glass-panel glass-panel-hover rounded-xl p-3 cursor-pointer transition-all border"
             :class="activeChapterKey === item.key
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-              : 'text-slate-700 dark:text-slate-200'"
+              ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30'
+              : 'text-zinc-700 dark:text-zinc-200'"
             @click="selectChapter(item)"
           >
             <span class="text-xs font-semibold line-clamp-1">

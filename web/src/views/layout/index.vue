@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useColorMode } from '@vueuse/core'
+import { useThemeStore } from '@/stores/theme'
 import { useTabsStore } from '@/stores/tabs'
 import {
   Sun,
@@ -14,23 +14,17 @@ import {
   ChevronsRight,
   Video,
   BookOpen,
-  Compass,
   Store,
   X,
-  MoreHorizontal
+  MoreHorizontal,
+  Sparkles
 } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
-const colorMode = useColorMode()
+const themeStore = useThemeStore()
 const isCollapsed = ref(false)
 const tabsStore = useTabsStore()
-
-const isDark = computed(() => colorMode.value === 'dark')
-
-const toggleTheme = () => {
-  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'
-}
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
@@ -83,29 +77,20 @@ const navRules = [
   { label: '规则管理', icon: FileBraces, path: '/rules' },
   { label: '规则集市', icon: Store, path: '/rules/market' },
 ]
-
-const currentRouteTitle = computed(() => {
-  const p = route.path
-  if (p === '/') return '首页探索'
-  if (p === '/search') return '聚合全网搜索'
-  if (p === '/video') return '视频发现'
-  if (p === '/picture') return '图集画廊'
-  if (p === '/novel') return '小说书库'
-  if (p === '/rules/market') return '规则集市 · 源生态'
-  if (p.startsWith('/rules')) return '规则引擎管理'
-  return '视界空间'
-})
 </script>
 
 <template>
-  <div class="h-screen w-screen overflow-hidden bg-[var(--bg-page)] text-[var(--text-main)] transition-colors duration-300 flex font-sans selection:bg-indigo-600 selection:text-white relative">
-    <!-- 全局星轨极光背景，仅在暗色模式下激活 -->
-    <div class="ambient-glow" />
-
-    <!-- Desktop Left Sidebar (mori-box 风格侧边栏) -->
+  <div class="h-screen w-screen overflow-hidden transition-colors duration-300 flex font-sans selection:bg-emerald-600 selection:text-white relative">
+    <!-- 极光光斑动效背景 (Aurora Ambient Glow) -->
+    <!-- Desktop Left Sidebar (微拟态侧边栏) -->
     <aside
-      class="hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen app-header p-3 justify-between z-30 overflow-x-hidden overflow-y-auto transition-all duration-300 ease-in-out select-none border-r border-slate-200/60 dark:border-white/5"
-      :class="isCollapsed ? 'w-16' : 'w-52'"
+      class="hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen p-3 justify-between"
+      :class="[
+        isCollapsed ? 'w-16' : 'w-60',
+        themeStore.isDark
+          ? 'bg-[#0a1814]/90 border-white/[0.06] backdrop-blur-xl'
+          : 'bg-white/85 border-emerald-100/60 backdrop-blur-xl'
+      ]"
     >
       <div class="space-y-5">
         <!-- 品牌 Logo 头部 -->
@@ -113,12 +98,10 @@ const currentRouteTitle = computed(() => {
           <n-tooltip :disabled="!isCollapsed" trigger="hover" placement="right">
             <template #trigger>
               <router-link to="/" class="flex items-center space-x-2.5 group min-w-0 overflow-hidden">
-                <img
-                  src="/icon.svg"
-                  alt="FluxView Logo"
-                  class="w-9 h-9 rounded-xl group-hover:scale-105 transition-transform duration-300 flex-shrink-0 object-cover"
-                />
-                <div class="text-lg font-black tracking-tight bg-gradient-to-r from-indigo-600 to-pink-500 dark:from-white dark:to-indigo-300 bg-clip-text text-transparent font-['Outfit'] whitespace-nowrap">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <Sparkles class="w-5 h-5 text-white animate-pulse" />
+                </div>
+                <div class="text-lg font-black tracking-tight gradient-flux font-['Plus_Jakarta_Sans','Outfit'] whitespace-nowrap">
                   FluxView
                 </div>
               </router-link>
@@ -130,7 +113,7 @@ const currentRouteTitle = computed(() => {
         <!-- 导航组 1：发现检索 -->
         <div class="space-y-1">
           <div
-            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 whitespace-nowrap overflow-hidden transition-all duration-300"
+            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 whitespace-nowrap overflow-hidden transition-all duration-300"
             :class="isCollapsed ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100 mb-1'"
           >
             发现检索
@@ -142,12 +125,16 @@ const currentRouteTitle = computed(() => {
                 class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative group overflow-hidden whitespace-nowrap"
                 :class="[
                   $route.path === item.path
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
+                    ? (themeStore.isDark ? 'bg-emerald-500/20 text-emerald-300 shadow-xs border border-emerald-500/30' : 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25')
+                    : (themeStore.isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-zinc-600 hover:text-zinc-900 hover:bg-emerald-50/60')
                 ]"
               >
                 <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
                 <span class="whitespace-nowrap">{{ item.label }}</span>
+                <span
+                  v-if="$route.path === item.path"
+                  class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-emerald-500"
+                ></span>
               </router-link>
             </template>
             {{ item.label }}
@@ -157,7 +144,7 @@ const currentRouteTitle = computed(() => {
         <!-- 导航组 2：媒体分类 -->
         <div class="space-y-1">
           <div
-            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 whitespace-nowrap overflow-hidden transition-all duration-300"
+            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 whitespace-nowrap overflow-hidden transition-all duration-300"
             :class="isCollapsed ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100 mb-1'"
           >
             媒体流
@@ -169,12 +156,16 @@ const currentRouteTitle = computed(() => {
                 class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative group overflow-hidden whitespace-nowrap"
                 :class="[
                   $route.path === item.path
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
+                    ? (themeStore.isDark ? 'bg-emerald-500/20 text-emerald-300 shadow-xs border border-emerald-500/30' : 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25')
+                    : (themeStore.isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-zinc-600 hover:text-zinc-900 hover:bg-emerald-50/60')
                 ]"
               >
                 <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
                 <span class="whitespace-nowrap">{{ item.label }}</span>
+                <span
+                  v-if="$route.path === item.path"
+                  class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-emerald-500"
+                ></span>
               </router-link>
             </template>
             {{ item.label }}
@@ -184,7 +175,7 @@ const currentRouteTitle = computed(() => {
         <!-- 导航组 3：规则引擎 -->
         <div class="space-y-1">
           <div
-            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 whitespace-nowrap overflow-hidden transition-all duration-300"
+            class="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 whitespace-nowrap overflow-hidden transition-all duration-300"
             :class="isCollapsed ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100 mb-1'"
           >
             规则引擎
@@ -196,12 +187,16 @@ const currentRouteTitle = computed(() => {
                 class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative group overflow-hidden whitespace-nowrap"
                 :class="[
                   (item.path === '/rules' ? ($route.path === '/rules' || $route.path.startsWith('/rules/edit') || $route.path.startsWith('/rules/discovery') || $route.path.startsWith('/rules/detail')) : $route.path === item.path)
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
+                    ? (themeStore.isDark ? 'bg-emerald-500/20 text-emerald-300 shadow-xs border border-emerald-500/30' : 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25')
+                    : (themeStore.isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-zinc-600 hover:text-zinc-900 hover:bg-emerald-50/60')
                 ]"
               >
                 <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
                 <span class="whitespace-nowrap">{{ item.label }}</span>
+                <span
+                  v-if="(item.path === '/rules' ? ($route.path === '/rules' || $route.path.startsWith('/rules/edit') || $route.path.startsWith('/rules/discovery') || $route.path.startsWith('/rules/detail')) : $route.path === item.path)"
+                  class="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-emerald-500"
+                ></span>
               </router-link>
             </template>
             {{ item.label }}
@@ -210,20 +205,20 @@ const currentRouteTitle = computed(() => {
       </div>
 
       <!-- 底部控制区（主题切换 & 折叠控制） -->
-      <div class="space-y-1 pt-2 border-t border-slate-200/50 dark:border-white/5">
+      <div class="space-y-1 pt-2 border-t border-emerald-100/60 dark:border-white/[0.06]">
         <!-- 主题切换行 -->
         <n-tooltip :disabled="!isCollapsed" trigger="hover" placement="right">
           <template #trigger>
             <div
-              @click="toggleTheme"
-              class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer overflow-hidden whitespace-nowrap transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5"
+              @click="themeStore.toggleTheme()"
+              class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer overflow-hidden whitespace-nowrap transition-all text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-emerald-50/80 dark:hover:bg-white/[0.06]"
             >
-              <Sun v-if="isDark" class="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <Moon v-else class="w-4 h-4 text-indigo-500 flex-shrink-0" />
-              <span class="whitespace-nowrap">{{ isDark ? '浅色模式' : '深色模式' }}</span>
+              <Sun v-if="themeStore.isDark" class="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <Moon v-else class="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span class="whitespace-nowrap">{{ themeStore.isDark ? '浅色模式' : '深色模式' }}</span>
             </div>
           </template>
-          切换主题
+          切换为{{ themeStore.isDark ? '翠影极光浅色' : '幻夜极光深色' }}主题
         </n-tooltip>
 
         <!-- 折叠/展开侧边栏 -->
@@ -231,7 +226,7 @@ const currentRouteTitle = computed(() => {
           <template #trigger>
             <div
               @click="toggleCollapse"
-              class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer overflow-hidden whitespace-nowrap transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5"
+              class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer overflow-hidden whitespace-nowrap transition-all text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-emerald-50/80 dark:hover:bg-white/[0.06]"
             >
               <ChevronsRight v-if="isCollapsed" class="w-4 h-4 flex-shrink-0" />
               <ChevronsLeft v-else class="w-4 h-4 flex-shrink-0" />
@@ -245,47 +240,59 @@ const currentRouteTitle = computed(() => {
 
     <!-- Right Main Container -->
     <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
-      <!-- 顶部固定 Header (mori-box 风格 Apple Segmented 多标签栏) -->
-      <header class="sticky top-0 z-20 h-9 sm:h-9.5 app-header border-b border-slate-200/60 dark:border-white/10 px-2 sm:px-3 flex items-center justify-between min-w-0 select-none backdrop-blur-xl">
+      <!-- 顶部固定 Header (Apple Segmented Glass Tab 多标签栏) -->
+      <header
+        class="sticky top-0 z-20 h-10 sm:h-11 border-b px-2 sm:px-4 flex items-center justify-between min-w-0 select-none backdrop-blur-xl transition-colors duration-200"
+        :class="themeStore.isDark ? 'bg-[#0a1814]/80 border-white/[0.06]' : 'bg-white/80 border-emerald-100/60'"
+      >
         <!-- 移动端 Logo / 站点标识 -->
-        <div class="flex items-center gap-1 lg:hidden flex-shrink-0 mr-1">
-          <router-link to="/" class="flex items-center space-x-1">
-            <img src="/icon.svg" alt="FluxView Logo" class="w-5.5 h-5.5 rounded-md object-cover" />
+        <div class="flex items-center gap-1.5 lg:hidden flex-shrink-0 mr-1.5">
+          <router-link to="/" class="flex items-center space-x-1.5">
+            <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-xs">
+              <Sparkles class="w-3.5 h-3.5 text-white" />
+            </div>
+            <span class="text-xs font-black tracking-tight gradient-flux font-['Plus_Jakarta_Sans']">FluxView</span>
           </router-link>
         </div>
 
-        <!-- 中间可滑动多标签栏 (Apple Segmented Glass Tab 风格) -->
-        <div class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5 min-w-0">
+        <!-- 中间可滑动多标签栏 (Segmented Glass Tab 风格) -->
+        <div class="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5 min-w-0">
           <div
             v-for="tab in tabsStore.tabs.value"
             :key="tab.fullPath"
             @click="handleTabClick(tab.fullPath)"
-            class="group relative flex items-center gap-1.5 h-6.5 px-2.5 rounded-lg text-[11px] font-medium shrink-0 cursor-pointer transition-all duration-150 select-none border"
+            class="group relative flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-medium shrink-0 cursor-pointer transition-all duration-150 select-none border"
             :class="tab.fullPath === tabsStore.activeFullPath.value
-              ? 'bg-indigo-600 dark:bg-indigo-500/90 text-white border-indigo-500/40 shadow-xs font-bold'
-              : 'bg-slate-100/70 dark:bg-white/[0.03] hover:bg-slate-200/60 dark:hover:bg-white/[0.07] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 border-slate-200/40 dark:border-white/5'"
+              ? (themeStore.isDark
+                  ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40 shadow-xs font-bold'
+                  : 'bg-emerald-600 text-white border-emerald-600 shadow-xs font-bold')
+              : (themeStore.isDark
+                  ? 'bg-white/[0.03] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border-white/[0.05]'
+                  : 'bg-emerald-50/60 hover:bg-emerald-100/70 text-zinc-600 hover:text-zinc-900 border-emerald-200/40')"
           >
             <!-- 激活指示微型高亮圆点 -->
-            <span v-if="tab.fullPath === tabsStore.activeFullPath.value" class="w-1.5 h-1.5 rounded-full bg-white/95 flex-shrink-0"></span>
+            <span v-if="tab.fullPath === tabsStore.activeFullPath.value" class="w-1.5 h-1.5 rounded-full bg-emerald-400 dark:bg-emerald-300 flex-shrink-0 animate-pulse"></span>
 
-            <span class="truncate max-w-[100px] sm:max-w-[140px] inline-block leading-none">
+            <span class="truncate max-w-[110px] sm:max-w-[150px] inline-block leading-none">
               {{ tab.title }}
             </span>
 
             <!-- 可关闭 Close 图标按键 -->
-            <button
+            <n-button
               v-if="tab.closable"
+              text
+              size="tiny"
               @click.stop="handleCloseTab(tab.fullPath)"
-              class="rounded p-0.5 transition-colors text-slate-400 hover:text-white hover:bg-white/25 active:scale-90 cursor-pointer opacity-60 group-hover:opacity-100"
+              class="rounded p-0.5 text-zinc-400 hover:text-white opacity-60 hover:opacity-100 cursor-pointer"
               title="关闭当前标签"
             >
               <X class="w-2.5 h-2.5" />
-            </button>
+            </n-button>
           </div>
         </div>
 
         <!-- 右侧动作快捷区 (多标签下拉、快捷搜索、主题切换) -->
-        <div class="flex items-center gap-1 flex-shrink-0 ml-1.5">
+        <div class="flex items-center gap-1.5 flex-shrink-0 ml-1.5">
           <!-- 标签页操作下拉菜单 -->
           <n-dropdown
             trigger="click"
@@ -295,32 +302,40 @@ const currentRouteTitle = computed(() => {
             ]"
             @select="handleSelectTabOption"
           >
-            <button
-              class="p-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-all cursor-pointer"
+            <n-button
+              quaternary
+              size="small"
+              class="!p-1.5 !rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               title="标签页更多选项"
             >
-              <MoreHorizontal class="w-3.5 h-3.5" />
-            </button>
+              <template #icon>
+                <MoreHorizontal class="w-3.5 h-3.5" />
+              </template>
+            </n-button>
           </n-dropdown>
 
           <!-- 快捷搜索框/按钮 -->
           <router-link
             to="/search"
-            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100/80 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-white/5 transition-all shadow-2xs hover:scale-102 active:scale-98"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-emerald-50/80 dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-emerald-200/50 dark:border-white/[0.06] transition-all shadow-2xs hover:scale-102 active:scale-98"
           >
-            <Search class="w-3 h-3 text-indigo-500" />
-            <span class="hidden md:inline">搜索</span>
+            <Search class="w-3 h-3 text-emerald-500" />
+            <span class="hidden md:inline">全网搜索</span>
           </router-link>
 
           <!-- 移动端主题切换 -->
-          <button
-            @click="toggleTheme"
-            class="lg:hidden p-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+          <n-button
+            quaternary
+            size="small"
+            @click="themeStore.toggleTheme()"
+            class="lg:hidden !p-1.5 !rounded-lg text-zinc-600 dark:text-zinc-300"
             title="切换主题"
           >
-            <Sun v-if="isDark" class="w-3.5 h-3.5 text-amber-400" />
-            <Moon v-else class="w-3.5 h-3.5 text-indigo-500" />
-          </button>
+            <template #icon>
+              <Sun v-if="themeStore.isDark" class="w-3.5 h-3.5 text-amber-400" />
+              <Moon v-else class="w-3.5 h-3.5 text-emerald-600" />
+            </template>
+          </n-button>
         </div>
       </header>
 
@@ -339,7 +354,10 @@ const currentRouteTitle = computed(() => {
       </main>
 
       <!-- 移动端底部 Tabbar (小屏手机适配) -->
-      <nav class="lg:hidden sticky bottom-0 z-20 h-14 app-header border-t border-slate-200/60 dark:border-white/10 px-2 flex items-center justify-around select-none backdrop-blur-xl">
+      <nav
+        class="lg:hidden sticky bottom-0 z-20 h-14 border-t px-2 flex items-center justify-around select-none backdrop-blur-xl"
+        :class="themeStore.isDark ? 'bg-[#08100d]/90 border-white/[0.06]' : 'bg-white/90 border-emerald-100/60'"
+      >
         <router-link
           v-for="item in [...navMain, ...navMedia.slice(0, 2), ...navRules]"
           :key="item.path"
@@ -347,8 +365,8 @@ const currentRouteTitle = computed(() => {
           class="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-lg text-[10px] font-semibold transition-all"
           :class="[
             $route.path === item.path
-              ? 'text-indigo-600 dark:text-indigo-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-zinc-500 dark:text-zinc-400'
           ]"
         >
           <component :is="item.icon" class="w-4 h-4" />
@@ -360,14 +378,6 @@ const currentRouteTitle = computed(() => {
 </template>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
 /* 页面过渡效果 */
 .fade-slide-enter-active,
 .fade-slide-leave-active {

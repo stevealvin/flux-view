@@ -2,19 +2,25 @@
   "name": "flux-view",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "web",
     "server"
   ],
   "scripts": {
+    "dev": "vite",
+    "dev:all": "vite",
+    "dev:split": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "npm run dev -w server",
     "dev:web": "npm run dev -w web",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
-    "build:server": "npm run build -w server",
+    "build": "npm run build -w web",
     "build:web": "npm run build -w web",
-    "build": "npm run build -w server && npm run build -w web"
+    "build:server": "npm run build -w server",
+    "build:all": "npm run build -w server && npm run build -w web",
+    "start": "npm run start -w server"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "@hono/vite-dev-server": "^0.26.1",
+    "concurrently": "^10.0.5"
   }
 }

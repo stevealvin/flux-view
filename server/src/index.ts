@@ -3,16 +3,36 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import rulesRouter from './routes/rules.js';
 
-export const app = new Hono();
+// 1. 创建全局统一带有 /api 前缀的 Hono 实例
+const app = new Hono().basePath('/api');
 
-// 全局日志和跨域中间件
+// 2. 中间件：日志与跨域支持
 app.use('*', logger());
-app.use('*', cors());
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}));
 
-// 健康检查
-app.get('/api', (c) => {
-  return c.text('Hello Hono!');
+// 3. 健康检查与状态端点 (自动位于 /api/health 与 /api)
+app.get('/health', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'flux-view-api',
+    time: new Date().toISOString(),
+  });
 });
 
-// 挂载模块化子路由
-app.route('/api/rules', rulesRouter);
+app.get('/', (c) => {
+  return c.json({
+    status: 'ok',
+    message: 'FluxView Rules Engine API is running',
+  });
+});
+
+// 4. 挂载规则引擎业务路由 (自动处于 /api/rules/*)
+app.route('/rules', rulesRouter);
+
+// 导出 app 实例供 Vite 一体化开发服务器 (@hono/vite-dev-server) 与 Vercel 挂载使用
+export default app;
+export { app };

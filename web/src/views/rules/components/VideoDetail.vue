@@ -89,31 +89,31 @@ const handleEpisodeClick = async (ep: MediaEpisode, groupName: string) => {
               <span
                 v-for="t in detail.tags"
                 :key="t"
-                class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/30"
+                class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-800/30"
               >
                 {{ t }}
               </span>
             </div>
           </div>
 
-          <div v-if="detail.desc" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pt-1" v-html="detail.desc"></div>
+          <div v-if="detail.desc" class="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed pt-1" v-html="detail.desc"></div>
         </div>
       </div>
 
       <!-- 右侧：相关推荐列表 -->
       <div v-if="detail.recommendations && detail.recommendations.length > 0" class="lg:col-span-4 xl:col-span-3 flex flex-col gap-3 h-full">
-        <div class="flex items-center gap-2 pb-1.5 border-b border-slate-200/50 dark:border-white/5">
-          <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100">相关推荐</h3>
+        <div class="flex items-center gap-2 pb-1.5 border-b border-emerald-100/50 dark:border-white/5">
+          <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500"></div>
+          <h3 class="text-xs font-bold text-zinc-800 dark:text-zinc-100">相关推荐</h3>
         </div>
         <div class="grid grid-cols-2 gap-3 pr-1">
           <div
             v-for="(item, idx) in detail.recommendations"
             :key="item.key || idx"
-            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-slate-200/60 dark:border-white/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-indigo-500/10 active:scale-98"
+            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-emerald-100/60 dark:border-white/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-emerald-500/10 active:scale-98"
             @click="emit('select', item)"
           >
-            <div class="aspect-[16/10] overflow-hidden relative bg-slate-200 dark:bg-slate-900">
+            <div class="aspect-[16/10] overflow-hidden relative bg-zinc-200 dark:bg-zinc-900">
               <img
                 v-if="item.cover"
                 :src="item.cover"
@@ -122,12 +122,12 @@ const handleEpisodeClick = async (ep: MediaEpisode, groupName: string) => {
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-              <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+              <div v-else class="w-full h-full flex items-center justify-center text-zinc-400">
                 <Play class="w-6 h-6" />
               </div>
             </div>
             <div class="p-2 flex flex-col justify-between flex-1">
-              <h4 class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h4 class="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 {{ item.title }}
               </h4>
             </div>
@@ -141,37 +141,37 @@ const handleEpisodeClick = async (ep: MediaEpisode, groupName: string) => {
       <!-- 选集 / 分集列表 (groups) -->
       <div v-if="detail.groups && detail.groups.length > 0" class="space-y-4">
         <div v-for="group in detail.groups" :key="group.name" class="space-y-3">
-          <div class="flex items-center gap-2 pb-1.5 border-b border-slate-200/50 dark:border-white/5">
-            <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-            <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ group.name }}</h3>
+          <div class="flex items-center gap-2 pb-1.5 border-b border-emerald-100/50 dark:border-white/5">
+            <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500"></div>
+            <h3 class="text-xs font-bold text-zinc-800 dark:text-zinc-100">{{ group.name }}</h3>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button
+            <n-button
               v-for="ep in group.items"
               :key="ep.key"
+              size="small"
+              :type="activeEpisodeKey === ep.key ? 'primary' : 'default'"
+              :secondary="activeEpisodeKey !== ep.key"
+              class="!rounded-xl !font-semibold"
               @click="handleEpisodeClick(ep, group.name)"
-              class="px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs"
-              :class="activeEpisodeKey === ep.key
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/[0.08] border-slate-200/60 dark:border-white/5'"
             >
               {{ ep.title }}
-            </button>
+            </n-button>
           </div>
         </div>
       </div>
 
       <!-- 剧照 / 预览图片流 (media.images) -->
       <div v-if="detail.media?.images && detail.media.images.length > 0" class="space-y-3">
-        <div class="flex items-center gap-2 pb-1.5 border-b border-slate-200/50 dark:border-white/5">
-          <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100">剧照与画廊预览</h3>
+        <div class="flex items-center gap-2 pb-1.5 border-b border-emerald-100/50 dark:border-white/5">
+          <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500"></div>
+          <h3 class="text-xs font-bold text-zinc-800 dark:text-zinc-100">剧照与画廊预览</h3>
         </div>
         <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           <div
             v-for="(img, idx) in detail.media.images"
             :key="idx"
-            class="group rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-900 border border-slate-200/60 dark:border-white/5 aspect-[3/4] cursor-pointer"
+            class="group rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-900 border border-emerald-100/60 dark:border-white/5 aspect-[3/4] cursor-pointer"
           >
             <img
               :src="img"

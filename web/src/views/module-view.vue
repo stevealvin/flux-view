@@ -181,17 +181,17 @@ onMounted(() => {
       <div class="flex flex-wrap items-center justify-between gap-4">
         <!-- 页面标题与图标 -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 flex-shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/25 flex-shrink-0">
             <component :is="activeIcon" class="w-5 h-5" />
           </div>
           <div>
-            <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
               <span>{{ props.type }}发现</span>
-              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
                 DISCOVERY
               </span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               当前共接入 {{ rules.length }} 个已启用{{ props.type }}规则源
             </p>
           </div>
@@ -200,55 +200,60 @@ onMounted(() => {
         <!-- 页面内即时检索框与刷新 -->
         <div class="flex items-center gap-2 w-full sm:w-auto">
           <div class="relative flex-1 sm:w-60">
-            <Search class="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
+            <Search class="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-400" />
             <input
               v-model="searchQuery"
               type="text"
               placeholder="在当前页面流中快速筛选..."
-              class="w-full pl-8 pr-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all"
+              class="w-full pl-8 pr-3 py-1.5 bg-emerald-50/60 dark:bg-white/[0.04] hover:bg-emerald-100/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-zinc-900 border border-emerald-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 transition-all"
             />
           </div>
 
-          <button
+          <n-button
+            size="small"
+            secondary
+            class="!rounded-xl"
+            :loading="executing"
             @click="fetchDiscovery(1)"
-            :disabled="executing"
-            class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer disabled:opacity-50"
             title="刷新当前流"
           >
-            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': executing }" />
-          </button>
+            <template #icon>
+              <RefreshCw class="w-3.5 h-3.5" />
+            </template>
+          </n-button>
         </div>
       </div>
 
       <!-- 规则切换标签栏 (Segmented Pill Tabs) -->
-      <div v-if="rules.length > 0" class="pt-3 border-t border-slate-200/50 dark:border-white/5 space-y-3">
+      <div v-if="rules.length > 0" class="pt-3 border-t border-emerald-100/50 dark:border-white/5 space-y-3">
         <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <button
+          <n-button
             v-for="rule in rules"
             :key="rule.id"
+            size="small"
+            :type="activeRuleId === rule.id ? 'primary' : 'default'"
+            :secondary="activeRuleId !== rule.id"
+            class="!rounded-xl !font-bold flex-shrink-0"
             @click="handleRuleChange(rule.id)"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none border whitespace-nowrap"
-            :class="activeRuleId === rule.id
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-              : 'bg-slate-100/80 dark:bg-white/[0.03] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200/50 dark:border-white/5 hover:bg-slate-200/60 dark:hover:bg-white/5'"
           >
             {{ rule.name }}
-          </button>
+          </n-button>
         </div>
 
         <!-- 子分类切换标签 (如果有) -->
         <div v-if="subCategories.length > 0" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <button
+          <n-button
             v-for="cat in subCategories"
             :key="cat"
+            size="tiny"
+            :type="activeCategory === cat ? 'primary' : 'default'"
+            :secondary="activeCategory !== cat"
+            :quaternary="activeCategory !== cat"
+            class="!rounded-lg flex-shrink-0"
             @click="handleCategoryChange(cat)"
-            class="px-3 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border whitespace-nowrap"
-            :class="activeCategory === cat
-              ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/40 font-bold'
-              : 'bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border-transparent hover:bg-slate-100/50 dark:hover:bg-white/5'"
           >
             {{ cat }}
-          </button>
+          </n-button>
         </div>
       </div>
     </div>
@@ -258,7 +263,7 @@ onMounted(() => {
       <!-- 初始加载状态 -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-24 gap-3">
         <n-spin size="large" />
-        <span class="text-slate-400 text-sm">正在加载规则列表...</span>
+        <span class="text-zinc-400 text-sm">正在加载规则列表...</span>
       </div>
 
       <!-- 空规则提示 -->
@@ -267,20 +272,21 @@ onMounted(() => {
         class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
       >
         <AlertCircle class="w-10 h-10 text-amber-500" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">暂无已启用的{{ props.type }}规则</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">请前往「规则管理」创建或启用对应的媒体规则。</p>
-        <button
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">暂无已启用的{{ props.type }}规则</h3>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">请前往「规则管理」创建或启用对应的媒体规则。</p>
+        <n-button
+          type="primary"
+          class="!rounded-xl !font-bold mt-2"
           @click="router.push('/rules')"
-          class="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
         >
           前往规则管理
-        </button>
+        </n-button>
       </div>
 
       <!-- 解析执行中（首次骨架屏） -->
       <div v-else-if="executing && items.length === 0" class="flex flex-col items-center justify-center py-24 gap-3">
         <n-spin size="large" />
-        <span class="text-slate-400 text-sm">沙箱正在解析媒体流数据...</span>
+        <span class="text-zinc-400 text-sm">沙箱正在解析媒体流数据...</span>
       </div>
 
       <!-- 解析错误 -->
@@ -290,13 +296,15 @@ onMounted(() => {
       >
         <AlertCircle class="w-10 h-10 text-rose-500" />
         <h3 class="text-sm font-bold text-rose-600 dark:text-rose-400">媒体流解析异常</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">{{ errorMsg }}</p>
-        <button
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ errorMsg }}</p>
+        <n-button
+          type="error"
+          ghost
+          class="!rounded-xl !font-bold mt-3"
           @click="fetchDiscovery(1)"
-          class="mt-3 px-4 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer"
         >
           重新尝试
-        </button>
+        </n-button>
       </div>
 
       <!-- 媒体内容卡片网格 (Netflix / Apple 质感) -->
@@ -305,7 +313,7 @@ onMounted(() => {
           v-if="filteredItems.length === 0"
           class="glass-panel rounded-2xl p-12 text-center max-w-sm mx-auto my-8 space-y-2"
         >
-          <p class="text-xs text-slate-500 dark:text-slate-400">未找到符合搜索条件的卡片</p>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">未找到符合搜索条件的卡片</p>
         </div>
 
         <div
@@ -318,11 +326,11 @@ onMounted(() => {
           <div
             v-for="(item, idx) in filteredItems"
             :key="item.key || idx"
-            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-slate-200/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-indigo-500/10 active:scale-98"
+            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-emerald-100/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-emerald-500/10 active:scale-98"
             @click="goToDetail(item)"
           >
             <!-- 封面图容器 -->
-            <div class="w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900" :class="coverAspectClass">
+            <div class="w-full relative overflow-hidden bg-zinc-200 dark:bg-zinc-900" :class="coverAspectClass">
               <img
                 v-if="item.cover"
                 :src="item.cover"
@@ -331,7 +339,7 @@ onMounted(() => {
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-              <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+              <div v-else class="w-full h-full flex items-center justify-center text-zinc-400">
                 <component :is="activeIcon" class="w-8 h-8" />
               </div>
 
@@ -359,10 +367,10 @@ onMounted(() => {
 
             <!-- 卡片文本信息 -->
             <div class="p-2.5 sm:p-3 flex flex-col justify-between flex-1 space-y-1">
-              <h3 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+              <h3 class="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                 {{ item.title }}
               </h3>
-              <p v-if="item.desc" class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+              <p v-if="item.desc" class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
                 {{ item.desc }}
               </p>
             </div>
@@ -371,14 +379,14 @@ onMounted(() => {
 
         <!-- 加载更多按钮 (若有下一页) -->
         <div v-if="hasMore" class="flex justify-center pt-6">
-          <button
+          <n-button
+            secondary
+            class="!rounded-xl !font-bold px-6"
+            :loading="executing"
             @click="loadNextPage"
-            :disabled="executing"
-            class="flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw v-if="executing" class="w-3.5 h-3.5 animate-spin" />
-            <span>{{ executing ? '正在加载下一页...' : '加载更多内容' }}</span>
-          </button>
+            {{ executing ? '正在加载下一页...' : '加载更多内容' }}
+          </n-button>
         </div>
       </div>
     </div>

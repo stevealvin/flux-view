@@ -32,14 +32,14 @@ const getImageUrl = (img: any): string => {
     </div>
 
     <!-- 顶部状态栏 -->
-    <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/50 dark:border-white/5">
+    <div class="flex items-center justify-between pb-1.5 border-b border-emerald-100/50 dark:border-white/5">
       <div class="flex items-center gap-2">
-        <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-indigo-500 to-pink-500"></div>
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+        <div class="w-1.5 h-4.5 rounded-full bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500"></div>
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100">
           图集画廊
         </h3>
       </div>
-      <span class="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/30">
+      <span class="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-800/30">
         共 {{ images.length }} 张（点击开启全屏预览）
       </span>
     </div>
@@ -50,7 +50,7 @@ const getImageUrl = (img: any): string => {
         <div
           v-for="(img, index) in images"
           :key="index"
-          class="overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/5 bg-slate-100 dark:bg-slate-900 shadow-2xs hover:shadow-lg transition-all duration-300 relative group aspect-[3/4] cursor-pointer"
+          class="overflow-hidden rounded-2xl border border-emerald-100/60 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900 shadow-2xs hover:shadow-lg transition-all duration-300 relative group aspect-[3/4] cursor-pointer"
         >
           <n-image
             :src="getImageUrl(img)"

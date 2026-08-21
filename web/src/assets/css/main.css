@@ -1,154 +1,136 @@
-@import './ui.css';
+@import "tailwindcss";
+
+/* 🌙 Tailwind CSS 4 深色模式变体选择器 (支持 .dark 类名及其所有子元素匹配) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 🌟 Tailwind CSS 4 主题变量映射 (支持在模板中直接使用 text-primary, bg-primary/10, border-primary 等工具类) */
+@theme {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-active: var(--color-primary-active);
+  --color-primary-suppl: var(--color-primary-suppl);
+  --color-body-bg: var(--color-body-bg);
+  --color-panel-bg: var(--color-panel-bg);
+  --color-panel-border: var(--color-panel-border);
+}
+
+/* 🌟 全局主题色单一真实源 (CSS Variables: 幻夜极光·翠影幽绿) */
+:root {
+  /* 品牌核心主色 (浅色模式: 纯净翡翠白) */
+  --color-primary: #059669;
+  --color-primary-hover: #10b981;
+  --color-primary-active: #047857;
+  --color-primary-suppl: #34d399;
+  --color-primary-rgb: 5, 150, 105;
+
+  /* 基础背景、面板与边框 */
+  --color-body-bg: #f6f9f8;
+  --color-panel-bg: rgba(255, 255, 255, 0.92);
+  --color-panel-border: rgba(5, 150, 105, 0.12);
+  --color-card-bg: #ffffff;
+  --color-card-hover-bg: #ffffff;
+  --color-hover: rgba(5, 150, 105, 0.05);
+
+  /* 漫反射拟态阴影 */
+  --shadow-panel: 0 4px 20px -2px rgba(5, 150, 105, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 2px 12px -2px rgba(5, 150, 105, 0.05);
+  --shadow-card-hover: 0 12px 28px -4px rgba(5, 150, 105, 0.14);
+
+  /* 多维流光渐变 */
+  --gradient-flux: linear-gradient(135deg, #059669 0%, #0d9488 50%, #10b981 100%);
+  --scrollbar-thumb: rgba(5, 150, 105, 0.2);
+  --scrollbar-thumb-hover: rgba(5, 150, 105, 0.45);
+}
+
+.dark {
+  /* 品牌核心主色 (深色模式: 曜夜极光黑晶) */
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+  --color-primary-active: #059669;
+  --color-primary-suppl: #6ee7b7;
+  --color-primary-rgb: 16, 185, 129;
+
+  /* 基础背景、面板与边框 */
+  --color-body-bg: #08100d;
+  --color-panel-bg: rgba(10, 24, 20, 0.85);
+  --color-panel-border: rgba(52, 211, 153, 0.15);
+  --color-card-bg: rgba(13, 30, 25, 0.6);
+  --color-card-hover-bg: rgba(18, 42, 35, 0.88);
+  --color-hover: rgba(16, 185, 129, 0.08);
+
+  /* 漫反射拟态阴影 */
+  --shadow-panel: 0 8px 30px -4px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(52, 211, 153, 0.15);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(52, 211, 153, 0.12);
+  --shadow-card-hover: 0 14px 35px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(52, 211, 153, 0.3);
+
+  /* 多维流光渐变 */
+  --gradient-flux: linear-gradient(135deg, #34d399 0%, #2dd4bf 50%, #6ee7b7 100%);
+  --scrollbar-thumb: rgba(52, 211, 153, 0.22);
+  --scrollbar-thumb-hover: rgba(52, 211, 153, 0.45);
+}
 
 @layer base {
-  /* Light Theme Variables (Default) */
-  :root {
-    --bg-page: #f8fafc;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --bg-card: rgba(255, 255, 255, 0.85);
-    --bg-card-hover: rgba(255, 255, 255, 0.98);
-    --bg-input: rgba(241, 245, 249, 0.9);
-    --border-glass: rgba(0, 0, 0, 0.08);
-    --border-glass-hover: rgba(99, 102, 241, 0.4);
-    --primary: #6366f1;
-    --primary-glow: rgba(99, 102, 241, 0.2);
-    --accent: #ec4899;
-    --accent-glow: rgba(236, 72, 153, 0.2);
-    --header-bg: rgba(255, 255, 255, 0.85);
-    --sub-bg: rgba(241, 245, 249, 0.7);
-  }
-
-  /* Dark Theme Variables */
-  html.dark {
-    --bg-page: hsl(224, 25%, 3.8%);
-    --text-main: hsl(210, 40%, 98%);
-    --text-muted: hsl(215, 20%, 75%);
-    --bg-card: rgba(15, 20, 35, 0.6);
-    --bg-card-hover: rgba(24, 32, 55, 0.8);
-    --bg-input: rgba(8, 10, 18, 0.8);
-    --border-glass: rgba(255, 255, 255, 0.08);
-    --border-glass-hover: rgba(255, 255, 255, 0.2);
-    --primary: hsl(239, 84%, 67%);
-    --primary-glow: rgba(99, 102, 241, 0.25);
-    --accent: hsl(330, 95%, 65%);
-    --accent-glow: rgba(236, 72, 153, 0.25);
-    --header-bg: rgba(10, 14, 26, 0.85);
-    --sub-bg: rgba(15, 20, 35, 0.65);
-  }
-
   body {
-    background-color: var(--bg-page);
-    color: var(--text-main);
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: var(--color-body-bg);
   }
 }
 
-#app {
-  height: 100vh;
-  background-color: var(--bg-page);
-}
-
-/* Glassmorphism & Adaptive Layout Panels */
+/* 🌟 流光视界·无边框玻璃拟态面板 (以面代线，柔和漫反射阴影) */
 .glass-panel {
-  background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
+  background: var(--color-panel-bg);
+  box-shadow: var(--shadow-panel);
 }
 
-.glass-panel-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 🌟 流光视界·悬浮拟态卡片 */
+.glass-card {
+  background: var(--color-card-bg);
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-panel-hover:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-glass-hover);
-  box-shadow: 0 12px 30px -10px var(--primary-glow);
+.glass-card:hover {
+  background: var(--color-card-hover-bg);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
-.app-header {
-  background: var(--header-bg);
+/* 🌟 FluxView 幻夜极光·翠影幽绿多维渐变文字 (翡翠绿 ➔ 青绿 ➔ 极光薄荷) */
+.gradient-text,
+.gradient-flux {
+  background: var(--gradient-flux);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.app-sub-panel {
-  background: var(--sub-bg);
-  border: 1px solid var(--border-glass);
+/* 翠影幽绿微光滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.app-input {
-  background: var(--bg-input);
-  color: var(--text-main);
-  border: 1px solid var(--border-glass);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.glow-text-primary {
-  text-shadow: 0 0 12px var(--primary-glow);
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
 }
 
-/* Shimmer Animation */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
-.animate-shimmer {
-  background: linear-gradient(90deg, var(--border-glass) 25%, var(--border-glass-hover) 50%, var(--border-glass) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
+/* 隐藏滚动条实用类 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-/* Ambient Glow Background Effect - Active in Dark Mode */
-html.dark .ambient-glow {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-html.dark .ambient-glow::before,
-html.dark .ambient-glow::after {
-  content: '';
-  position: absolute;
-  width: 60vw;
-  height: 60vw;
-  border-radius: 50%;
-  filter: blur(140px);
-  opacity: 0.08;
-  animation: float-aurora 35s ease-in-out infinite alternate;
-}
-
-html.dark .ambient-glow::before {
-  top: -10%;
-  left: -10%;
-  background: radial-gradient(circle, var(--primary), transparent 75%);
-}
-
-html.dark .ambient-glow::after {
-  bottom: -15%;
-  right: -10%;
-  background: radial-gradient(circle, var(--accent), transparent 75%);
-  animation-delay: -15s;
-}
-
-@keyframes float-aurora {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-  }
-  100% {
-    transform: translate(10vw, 5vh) scale(1.15) rotate(120deg);
-  }
-}
-
-/* Scrollbar styles */
-.overflow-auto, .overflow-scroll, .overflow-x-auto, .overflow-x-scroll, .overflow-y-auto, .overflow-y-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-}
-.overflow-auto:hover, .overflow-scroll:hover, .overflow-x-auto:hover, .overflow-y-auto:hover {
-  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

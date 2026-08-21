@@ -31,6 +31,15 @@ const form = ref({
   name: '',
   type: ''
 })
+
+// 规则分类下拉选项 (供 n-select 组件使用)
+const typeOptions = [
+  { label: '全部类型', value: '' },
+  { label: '视频 (Video)', value: 'video' },
+  { label: '图片 (Picture)', value: 'picture' },
+  { label: '小说 (Novel)', value: 'novel' }
+]
+
 const list = ref<RuleSchema[]>([])
 const loading = ref(false)
 
@@ -251,17 +260,17 @@ loadData()
       <div class="flex flex-wrap items-center justify-between gap-4">
         <!-- 页面标题与统计 -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 flex-shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/25 flex-shrink-0">
             <Archive class="w-5 h-5" />
           </div>
           <div>
-            <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
               <span>规则引擎管理</span>
-              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
                 ENGINE HUB
               </span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               管理系统内置与自定义的 JavaScript 沙箱抓取与解析规则
             </p>
           </div>
@@ -269,80 +278,107 @@ loadData()
 
         <!-- 动作按钮组 (新建、导入、导出、重置预置) -->
         <div class="flex flex-wrap items-center gap-2">
-          <button
+          <n-button
+            size="small"
+            secondary
+            class="!rounded-xl !font-bold"
             @click="resetDefaults"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
             title="重置回默认预置规则"
           >
-            <RotateCcw class="w-3.5 h-3.5" />
+            <template #icon>
+              <RotateCcw class="w-3.5 h-3.5" />
+            </template>
             <span class="hidden sm:inline">重置预置</span>
-          </button>
+          </n-button>
 
-          <button
+          <n-button
+            size="small"
+            secondary
+            class="!rounded-xl !font-bold"
             @click="showImportModal = true"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
           >
-            <Upload class="w-3.5 h-3.5" />
+            <template #icon>
+              <Upload class="w-3.5 h-3.5" />
+            </template>
             <span>导入规则</span>
-          </button>
+          </n-button>
 
-          <button
+          <n-button
+            size="small"
+            secondary
+            class="!rounded-xl !font-bold"
             @click="exportAllRules"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
           >
-            <Download class="w-3.5 h-3.5" />
+            <template #icon>
+              <Download class="w-3.5 h-3.5" />
+            </template>
             <span>备份导出</span>
-          </button>
+          </n-button>
 
-          <button
+          <n-button
+            size="small"
+            type="primary"
+            class="!rounded-xl !font-bold"
             @click="router.push('/rules/edit')"
-            class="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
-            <Plus class="w-4 h-4" />
+            <template #icon>
+              <Plus class="w-4 h-4" />
+            </template>
             <span>新建规则</span>
-          </button>
+          </n-button>
         </div>
       </div>
 
       <!-- 检索与筛选栏 -->
-      <div class="pt-3 border-t border-slate-200/50 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+      <div class="pt-3 border-t border-emerald-100/50 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2.5">
-          <input
-            v-model="form.name"
-            type="text"
-            placeholder="搜索规则名称..."
-            @keyup.enter="onSearch"
-            class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all w-44"
-          />
+          <!-- 规则名称检索输入框 (n-input 组件) -->
+          <div class="w-48 sm:w-56">
+            <n-input
+              v-model:value="form.name"
+              placeholder="搜索规则名称..."
+              clearable
+              class="!rounded-xl"
+              @keyup.enter="onSearch"
+              @clear="onSearch"
+            >
+              <template #prefix>
+                <SearchIcon class="w-4 h-4 text-zinc-400" />
+              </template>
+            </n-input>
+          </div>
 
-          <select
-            v-model="form.type"
-            @change="onSearch"
-            class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
-          >
-            <option value="">全部类型</option>
-            <option value="video">视频 (Video)</option>
-            <option value="picture">图片 (Picture)</option>
-            <option value="novel">小说 (Novel)</option>
-          </select>
+          <!-- 规则类型选择框 (n-select 组件) -->
+          <div class="w-36 sm:w-40">
+            <n-select
+              v-model:value="form.type"
+              :options="typeOptions"
+              class="!rounded-xl"
+              @update:value="onSearch"
+            />
+          </div>
 
-          <button
+          <!-- 筛选按钮 -->
+          <n-button
+            type="primary"
+            class="!rounded-xl !font-bold"
             @click="onSearch"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all cursor-pointer shadow-xs"
           >
             筛选
-          </button>
+          </n-button>
 
-          <button
+          <!-- 重置按钮 -->
+          <n-button
+            quaternary
+            class="!rounded-xl !font-semibold"
             @click="onReset"
-            class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
           >
             重置
-          </button>
+          </n-button>
         </div>
 
-        <span class="text-xs text-slate-400">
-          已加载 <strong class="text-indigo-600 dark:text-indigo-400">{{ list.length }}</strong> 条规则
+        <span class="text-xs text-zinc-400 whitespace-nowrap">
+          已加载 <strong class="text-emerald-600 dark:text-emerald-400">{{ list.length }}</strong> 条规则
         </span>
       </div>
     </div>
@@ -350,30 +386,30 @@ loadData()
     <!-- 规则卡片网格列表 (mori-box 风格) -->
     <div class="space-y-4">
       <div v-if="list.length === 0" class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3">
-        <Compass class="w-10 h-10 text-slate-400" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">没有找到规则</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">可以点击上方“新建规则”或“重置预置”导入规则。</p>
+        <Compass class="w-10 h-10 text-zinc-400" />
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">没有找到规则</h3>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">可以点击上方“新建规则”或“重置预置”导入规则。</p>
       </div>
 
       <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="rule in list"
           :key="rule.id"
-          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group relative"
+          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group relative border border-emerald-100/60 dark:border-white/5"
         >
           <!-- 上半部：图标、名称、开关、描述 -->
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
                   <component :is="getCategoryIcon(rule.type)" class="w-5 h-5" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 class="text-sm font-bold text-zinc-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {{ rule.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-[10px] font-mono text-slate-400">
+                    <span class="text-[10px] font-mono text-zinc-400">
                       v{{ rule.version || '1.0.0' }} • {{ rule.type === 'video' ? '视频' : rule.type === 'picture' ? '图片' : '小说' }}
                     </span>
                   </div>
@@ -389,57 +425,75 @@ loadData()
             </div>
 
             <!-- 规则描述 -->
-            <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+            <p class="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
               {{ rule.description || '暂无详细描述信息' }}
             </p>
 
             <!-- 站点域名 -->
-            <div v-if="rule.baseUrl" class="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1">
+            <div v-if="rule.baseUrl" class="text-[11px] font-mono text-zinc-400 truncate flex items-center gap-1">
               <span class="opacity-60">源站:</span>
               <span class="truncate">{{ rule.baseUrl }}</span>
             </div>
           </div>
 
           <!-- 下半部：动作栏 (编辑、复制、导出、删除) -->
-          <div class="pt-4 mt-4 border-t border-slate-200/50 dark:border-white/5 flex items-center justify-between text-xs">
+          <div class="pt-4 mt-4 border-t border-emerald-100/50 dark:border-white/5 flex items-center justify-between text-xs">
             <div class="flex items-center gap-1">
-              <button
+              <n-button
+                quaternary
+                circle
+                size="small"
                 @click="copySingleRule(rule)"
-                class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 title="复制规则 JSON"
               >
-                <Copy class="w-3.5 h-3.5" />
-              </button>
+                <template #icon>
+                  <Copy class="w-3.5 h-3.5" />
+                </template>
+              </n-button>
 
-              <button
+              <n-button
+                quaternary
+                circle
+                size="small"
                 @click="exportSingleRule(rule)"
-                class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 title="导出规则文件"
               >
-                <Download class="w-3.5 h-3.5" />
-              </button>
+                <template #icon>
+                  <Download class="w-3.5 h-3.5" />
+                </template>
+              </n-button>
 
               <n-popconfirm @positive-click="deleteRule(rule)">
                 <template #trigger>
-                  <button
-                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  <n-button
+                    quaternary
+                    circle
+                    size="small"
+                    class="text-zinc-400 hover:text-rose-500"
                     title="删除规则"
                   >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
+                    <template #icon>
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </template>
+                  </n-button>
                 </template>
                 确定要删除规则「{{ rule.name }}」吗？
               </n-popconfirm>
             </div>
 
             <!-- 编辑配置主按钮 -->
-            <button
+            <n-button
+              size="small"
+              type="primary"
+              secondary
+              class="!rounded-xl !font-bold"
               @click="onGoto(rule)"
-              class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200/50 dark:border-indigo-800/30 transition-all cursor-pointer"
             >
-              <EditIcon class="w-3.5 h-3.5" />
+              <template #icon>
+                <EditIcon class="w-3.5 h-3.5" />
+              </template>
               <span>编辑配置</span>
-            </button>
+            </n-button>
           </div>
         </div>
       </div>
@@ -459,13 +513,18 @@ loadData()
             class="hidden"
             @change="handleFileChange"
           />
-          <button
+          <n-button
+            dashed
+            block
+            size="large"
+            class="!rounded-xl !h-12 !text-xs"
             @click="triggerFileInput"
-            class="w-full py-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-indigo-500 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 flex items-center justify-center gap-2 transition-all cursor-pointer bg-slate-50/50 dark:bg-white/[0.02]"
           >
-            <Upload class="w-4 h-4" />
+            <template #icon>
+              <Upload class="w-4 h-4" />
+            </template>
             <span>点击选择本地规则 .json 备份文件</span>
-          </button>
+          </n-button>
         </div>
 
         <div>
@@ -481,18 +540,22 @@ loadData()
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
-          <button
+          <n-button
+            size="small"
+            quaternary
+            class="!rounded-xl !font-bold"
             @click="showImportModal = false"
-            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
           >
             取消
-          </button>
-          <button
+          </n-button>
+          <n-button
+            size="small"
+            type="primary"
+            class="!rounded-xl !font-bold"
             @click="submitTextImport"
-            class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
             导入所填规则
-          </button>
+          </n-button>
         </div>
       </div>
     </n-modal>

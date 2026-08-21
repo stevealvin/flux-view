@@ -141,21 +141,25 @@ onMounted(() => {
     <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3 w-full sm:w-auto">
-          <button
+          <n-button
+            quaternary
+            size="small"
+            class="!p-2 !rounded-xl"
             @click="router.back()"
-            class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
             title="返回"
           >
-            <ArrowLeft class="w-4 h-4" />
-          </button>
+            <template #icon>
+              <ArrowLeft class="w-4 h-4" />
+            </template>
+          </n-button>
           <div>
-            <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
               <span>全网聚合搜索</span>
-              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
                 MULTI-SOURCE SEARCH
               </span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               一键并发检索所有已启用的影视、画廊与小说规则源
             </p>
           </div>
@@ -168,27 +172,29 @@ onMounted(() => {
             type="text"
             placeholder="输入搜索关键词，回车发起检索..."
             @keyup.enter="handleSearchSubmit"
-            class="w-full pl-9 pr-10 py-2.5 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all shadow-inner focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20"
+            class="w-full pl-9 pr-14 py-2.5 bg-emerald-50/60 dark:bg-white/[0.04] hover:bg-emerald-100/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-zinc-900 border border-emerald-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 transition-all shadow-inner focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20"
           />
-          <Search class="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-          <button
+          <Search class="absolute left-3 top-3 w-4 h-4 text-zinc-400" />
+          <n-button
+            type="primary"
+            size="small"
+            class="!absolute !right-1.5 !top-1.5 !rounded-lg !font-bold"
             @click="handleSearchSubmit"
-            class="absolute right-2 top-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all cursor-pointer shadow-sm shadow-indigo-600/30"
           >
             搜索
-          </button>
+          </n-button>
         </div>
       </div>
 
       <!-- 搜索进度条 -->
       <div v-if="loading && totalRuleRequests > 0" class="pt-2">
-        <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+        <div class="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 mb-1.5">
           <span>正在并发检索各大规则源...</span>
           <span class="font-mono">{{ totalRuleRequests - activeRuleRequests }} / {{ totalRuleRequests }} 个源完成</span>
         </div>
-        <div class="w-full bg-slate-100 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
+        <div class="w-full bg-emerald-50 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
           <div
-            class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full transition-all duration-300 rounded-full"
+            class="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-full transition-all duration-300 rounded-full"
             :style="{ width: `${((totalRuleRequests - activeRuleRequests) / totalRuleRequests) * 100}%` }"
           />
         </div>
@@ -204,7 +210,7 @@ onMounted(() => {
       >
         <AlertCircle class="w-10 h-10 text-rose-500" />
         <h3 class="text-sm font-bold text-rose-600 dark:text-rose-400">检索失败</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">{{ errorMsg }}</p>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ errorMsg }}</p>
       </div>
 
       <!-- 未搜索状态 -->
@@ -212,9 +218,9 @@ onMounted(() => {
         v-else-if="!searched"
         class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
       >
-        <Sparkles class="w-10 h-10 text-indigo-500" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">开始探索全网内容</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">在上方输入框中输入关键字，即可同时聚合多源检索结果。</p>
+        <Sparkles class="w-10 h-10 text-emerald-500" />
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">开始探索全网内容</h3>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">在上方输入框中输入关键字，即可同时聚合多源检索结果。</p>
       </div>
 
       <!-- 搜索空状态 -->
@@ -222,27 +228,27 @@ onMounted(() => {
         v-else-if="!loading && searchResults.length === 0"
         class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
       >
-        <Compass class="w-10 h-10 text-slate-400" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">未找到相关媒体内容</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">换个关键词试试，或前往「规则管理」检查相关规则源是否启用。</p>
+        <Compass class="w-10 h-10 text-zinc-400" />
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">未找到相关媒体内容</h3>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">换个关键词试试，或前往「规则管理」检查相关规则源是否启用。</p>
       </div>
 
       <!-- 结果卡片网格 -->
       <div v-else class="space-y-4">
-        <div class="flex items-center justify-between px-1 text-xs text-slate-500 dark:text-slate-400">
-          <span>共找到 <strong class="text-indigo-600 dark:text-indigo-400">{{ searchResults.length }}</strong> 条多媒体聚合结果</span>
+        <div class="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <span>共找到 <strong class="text-emerald-600 dark:text-emerald-400">{{ searchResults.length }}</strong> 条多媒体聚合结果</span>
         </div>
 
         <div class="grid gap-3 sm:gap-4.5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           <div
             v-for="(item, idx) in searchResults"
             :key="item.key || idx"
-            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-slate-200/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-indigo-500/10 active:scale-98"
+            class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-emerald-100/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-emerald-500/10 active:scale-98"
             @click="goToDetail(item)"
           >
             <!-- 封面图容器 -->
             <div
-              class="w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900"
+              class="w-full relative overflow-hidden bg-zinc-200 dark:bg-zinc-900"
               :class="item.ruleType === 'video' || item.ruleType === '视频' ? 'aspect-[16/10]' : 'aspect-[3/4]'"
             >
               <img
@@ -253,7 +259,7 @@ onMounted(() => {
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-              <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+              <div v-else class="w-full h-full flex items-center justify-center text-zinc-400">
                 <component :is="getItemIcon(item.ruleType)" class="w-8 h-8" />
               </div>
 
@@ -263,7 +269,7 @@ onMounted(() => {
               </div>
 
               <!-- 规则来源 Badge -->
-              <span class="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-indigo-600/80 backdrop-blur-md text-white border border-white/10 shadow-xs">
+              <span class="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-emerald-600/85 backdrop-blur-md text-white border border-white/10 shadow-xs">
                 {{ item.ruleName }}
               </span>
 
@@ -278,10 +284,10 @@ onMounted(() => {
 
             <!-- 卡片文本信息 -->
             <div class="p-2.5 sm:p-3 flex flex-col justify-between flex-1 space-y-1">
-              <h3 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+              <h3 class="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                 {{ item.title }}
               </h3>
-              <p v-if="item.desc" class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+              <p v-if="item.desc" class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
                 {{ item.desc }}
               </p>
             </div>

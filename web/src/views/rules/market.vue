@@ -225,57 +225,61 @@ onMounted(() => {
       <div class="flex flex-wrap items-center justify-between gap-4">
         <!-- 页面标题与理念介绍 -->
         <div class="flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 flex-shrink-0">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/25 flex-shrink-0">
             <Store class="w-5 h-5" />
           </div>
           <div>
-            <h1 class="text-base sm:text-xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 class="text-base sm:text-xl font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
               <span>规则集市 · 源生态</span>
-              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
                 RULE MARKET
               </span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               精选全网优质规则分享站点与社区，发现更多影视视界、小说书源及媒体沙箱规则。
             </p>
           </div>
         </div>
 
         <!-- 自定义添加站点按钮 -->
-        <button
+        <n-button
+          type="primary"
+          size="small"
+          class="!rounded-xl !font-bold"
           @click="showAddModal = true"
-          class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
         >
-          <Plus class="w-4 h-4" />
+          <template #icon>
+            <Plus class="w-4 h-4" />
+          </template>
           <span>添加收藏站点</span>
-        </button>
+        </n-button>
       </div>
 
       <!-- 分类标签与搜索筛选条 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/50 dark:border-white/5">
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-emerald-100/50 dark:border-white/5">
         <!-- 分类切换胶囊按钮 (Segmented Pills) -->
         <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <button
+          <n-button
             v-for="cat in categories"
             :key="cat"
+            size="small"
+            :type="selectedCategory === cat ? 'primary' : 'default'"
+            :secondary="selectedCategory !== cat"
+            class="!rounded-xl !font-bold flex-shrink-0"
             @click="selectedCategory = cat"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none border whitespace-nowrap"
-            :class="selectedCategory === cat
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-              : 'bg-slate-100/80 dark:bg-white/[0.03] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200/50 dark:border-white/5 hover:bg-slate-200/60 dark:hover:bg-white/5'"
           >
             {{ cat }}
-          </button>
+          </n-button>
         </div>
 
         <!-- 搜索输入框 -->
         <div class="relative w-full sm:w-64">
-          <Search class="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
+          <Search class="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-400" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="搜索源站名称、标签或网址..."
-            class="w-full pl-8 pr-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-slate-900 border border-slate-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all"
+            class="w-full pl-8 pr-3 py-1.5 bg-emerald-50/60 dark:bg-white/[0.04] hover:bg-emerald-100/50 dark:hover:bg-white/[0.07] focus:bg-white dark:focus:bg-zinc-900 border border-emerald-200/60 dark:border-white/10 rounded-xl text-xs outline-none text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 transition-all"
           />
         </div>
       </div>
@@ -284,30 +288,30 @@ onMounted(() => {
     <!-- 站点卡片网格列表 (mori-box 风格) -->
     <div class="space-y-4">
       <div v-if="filteredSites.length === 0" class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3">
-        <Compass class="w-10 h-10 text-slate-400" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">没有找到匹配的规则站点</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">尝试更换搜索关键字，或点击上方“添加收藏站点”。</p>
+        <Compass class="w-10 h-10 text-zinc-400" />
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">没有找到匹配的规则站点</h3>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">尝试更换搜索关键字，或点击上方“添加收藏站点”。</p>
       </div>
 
       <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="site in filteredSites"
           :key="site.id"
-          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group relative"
+          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col justify-between h-full group relative border border-emerald-100/60 dark:border-white/5"
         >
           <!-- 上半部：站点头部与描述 -->
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
                   <component :is="getCategoryIcon(site.category)" class="w-5 h-5" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 class="text-sm font-bold text-zinc-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {{ site.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate max-w-[170px]">
+                    <span class="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate max-w-[170px]">
                       {{ site.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
                     </span>
                   </div>
@@ -320,14 +324,14 @@ onMounted(() => {
                 class="px-2 py-0.5 text-[9px] font-black rounded-full border flex-shrink-0"
                 :class="site.isCustom
                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                  : 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-600/20'"
+                  : 'bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border-emerald-600/20'"
               >
                 {{ site.badge }}
               </span>
             </div>
 
             <!-- 站点介绍 -->
-            <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+            <p class="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-3 leading-relaxed">
               {{ site.description }}
             </p>
 
@@ -336,7 +340,7 @@ onMounted(() => {
               <span
                 v-for="tag in site.tags"
                 :key="tag"
-                class="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-white/5"
+                class="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-emerald-50/60 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 border border-emerald-100/50 dark:border-white/5"
               >
                 {{ tag }}
               </span>
@@ -344,35 +348,48 @@ onMounted(() => {
           </div>
 
           <!-- 下半部：动作栏 (直达访问 & 复制链接 & 删除) -->
-          <div class="pt-4 mt-4 border-t border-slate-200/50 dark:border-white/5 flex items-center justify-between text-xs">
+          <div class="pt-4 mt-4 border-t border-emerald-100/50 dark:border-white/5 flex items-center justify-between text-xs">
             <div class="flex items-center gap-1.5">
-              <button
+              <n-button
+                size="tiny"
+                quaternary
+                class="!rounded-lg text-zinc-600 dark:text-zinc-300"
                 @click="copyUrl(site.url, site.name)"
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 title="复制站点地址"
               >
-                <Copy class="w-3 h-3" />
+                <template #icon>
+                  <Copy class="w-3 h-3" />
+                </template>
                 <span>复制链接</span>
-              </button>
+              </n-button>
 
-              <button
+              <n-button
                 v-if="site.isCustom"
+                size="tiny"
+                quaternary
+                circle
+                class="text-zinc-400 hover:text-rose-500"
                 @click="removeCustomSite(site.id, site.name)"
-                class="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                 title="删除自定义站点"
               >
-                <Trash2 class="w-3 h-3" />
-              </button>
+                <template #icon>
+                  <Trash2 class="w-3 h-3" />
+                </template>
+              </n-button>
             </div>
 
             <!-- 直达访问主按钮 -->
-            <button
+            <n-button
+              size="small"
+              type="primary"
+              class="!rounded-xl !font-bold"
               @click="openSite(site.url)"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-600/30 group-hover:scale-102 active:scale-98 transition-all cursor-pointer"
             >
               <span>立即直达</span>
-              <ExternalLink class="w-3.5 h-3.5" />
-            </button>
+              <template #icon>
+                <ExternalLink class="w-3.5 h-3.5" />
+              </template>
+            </n-button>
           </div>
         </div>
       </div>
@@ -382,18 +399,18 @@ onMounted(() => {
     <n-modal v-model:show="showAddModal" preset="card" title="添加规则分享站点" class="max-w-lg">
       <div class="space-y-4">
         <div>
-          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">站点名称 *</label>
+          <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">站点名称 *</label>
           <n-input v-model:value="newSiteForm.name" placeholder="如: 某某开源源站 / 影视规则库" clearable />
         </div>
 
         <div>
-          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">站点网址 URL *</label>
+          <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">站点网址 URL *</label>
           <n-input v-model:value="newSiteForm.url" placeholder="如: https://www.yckceo.com/" clearable />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">主要分类</label>
+            <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">主要分类</label>
             <n-select
               v-model:value="newSiteForm.category"
               :options="[
@@ -406,29 +423,33 @@ onMounted(() => {
             />
           </div>
           <div>
-            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">标签 (空格或逗号分隔)</label>
+            <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">标签 (空格或逗号分隔)</label>
             <n-input v-model:value="newSiteForm.tagsString" placeholder="书源 影视 精品" clearable />
           </div>
         </div>
 
         <div>
-          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">站点特色说明</label>
+          <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">站点特色说明</label>
           <n-input v-model:value="newSiteForm.description" type="textarea" placeholder="简要描述站点的核心规则类型与特色..." :rows="3" />
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
-          <button
+          <n-button
+            size="small"
+            quaternary
+            class="!rounded-xl !font-bold"
             @click="showAddModal = false"
-            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
           >
             取消
-          </button>
-          <button
+          </n-button>
+          <n-button
+            size="small"
+            type="primary"
+            class="!rounded-xl !font-bold"
             @click="handleAddSite"
-            class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
             确认添加
-          </button>
+          </n-button>
         </div>
       </div>
     </n-modal>

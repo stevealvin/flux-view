@@ -91,32 +91,40 @@ onMounted(() => {
     <!-- 顶部操作栏 (mori-box 风格) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
-        <button
+        <n-button
+          quaternary
+          size="small"
+          class="!p-2 !rounded-xl"
           @click="router.back()"
-          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
           title="返回"
         >
-          <ArrowLeft class="w-4 h-4" />
-        </button>
+          <template #icon>
+            <ArrowLeft class="w-4 h-4" />
+          </template>
+        </n-button>
         <div class="min-w-0">
-          <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white truncate">
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white truncate">
             {{ detail?.title || (route.query.title as string) || '媒体详情播放' }}
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400" v-if="rule">
+          <p class="text-xs text-zinc-500 dark:text-zinc-400" v-if="rule">
             来源: {{ rule.name }} • {{ rule.type === 'video' ? '视频' : rule.type === 'picture' ? '图片' : '小说' }}
           </p>
         </div>
       </div>
 
       <!-- 刷新按钮 -->
-      <button
+      <n-button
+        size="small"
+        secondary
+        class="!rounded-xl"
+        :loading="executing"
         @click="loadDetail"
-        :disabled="executing"
-        class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer disabled:opacity-50"
         title="重新解析"
       >
-        <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': executing }" />
-      </button>
+        <template #icon>
+          <RefreshCw class="w-3.5 h-3.5" />
+        </template>
+      </n-button>
     </div>
 
     <!-- 主展示面板 -->
@@ -124,7 +132,7 @@ onMounted(() => {
       <!-- 加载状态 -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-28 gap-3">
         <n-spin size="large" />
-        <span class="text-slate-400 text-sm">沙箱正在解析媒体播放与正文数据...</span>
+        <span class="text-zinc-400 text-sm">沙箱正在解析媒体播放与正文数据...</span>
       </div>
 
       <!-- 错误状态 -->
@@ -134,13 +142,15 @@ onMounted(() => {
       >
         <AlertCircle class="w-10 h-10 text-rose-500" />
         <h3 class="text-sm font-bold text-rose-600 dark:text-rose-400">解析异常</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">{{ errorMsg }}</p>
-        <button
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ errorMsg }}</p>
+        <n-button
+          type="error"
+          ghost
+          class="!rounded-xl !font-bold mt-3"
           @click="loadDetail"
-          class="mt-3 px-4 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer"
         >
           重新尝试
-        </button>
+        </n-button>
       </div>
 
       <!-- 媒体内容面板 (多态分发) -->

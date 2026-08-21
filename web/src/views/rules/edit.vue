@@ -74,6 +74,12 @@ export default {
 })
 
 const testAction = ref<'discovery' | 'search' | 'detail' | 'parse'>('discovery')
+const testActionOptions = [
+  { label: 'discovery()', value: 'discovery' },
+  { label: 'search()', value: 'search' },
+  { label: 'detail()', value: 'detail' },
+  { label: 'parse()', value: 'parse' }
+]
 const testParam = ref('')
 const submitLoading = ref(false)
 const testing = ref(false)
@@ -193,38 +199,51 @@ onMounted(() => {
     <!-- 顶部操作栏 (mori-box 风格) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
       <div class="flex items-center gap-3">
-        <button
+        <n-button
+          quaternary
+          size="small"
+          class="!p-2 !rounded-xl"
           @click="router.back()"
-          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
           title="返回"
         >
-          <ArrowLeft class="w-4 h-4" />
-        </button>
+          <template #icon>
+            <ArrowLeft class="w-4 h-4" />
+          </template>
+        </n-button>
         <div>
-          <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
             <span>{{ route.query.id ? '编辑规则配置' : '新建规则' }}</span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400" v-if="form.name">
+          <p class="text-xs text-zinc-500 dark:text-zinc-400" v-if="form.name">
             {{ form.name }} • {{ form.type || '未指定' }} • v{{ form.version || '1.0.0' }}
           </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2" v-if="route.query.id">
-        <button
+        <n-button
+          size="small"
+          secondary
+          class="!rounded-xl !font-bold"
           @click="copyRule"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
         >
-          <Copy class="w-3.5 h-3.5" />
+          <template #icon>
+            <Copy class="w-3.5 h-3.5" />
+          </template>
           <span class="hidden sm:inline">复制配置</span>
-        </button>
-        <button
+        </n-button>
+        <n-button
+          size="small"
+          type="primary"
+          secondary
+          class="!rounded-xl !font-bold"
           @click="exportRule"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200/50 dark:border-indigo-800/30 transition-all cursor-pointer"
         >
-          <Download class="w-3.5 h-3.5" />
+          <template #icon>
+            <Download class="w-3.5 h-3.5" />
+          </template>
           <span class="hidden sm:inline">导出文件</span>
-        </button>
+        </n-button>
       </div>
     </div>
 
@@ -267,43 +286,45 @@ onMounted(() => {
         <!-- 脚本代码编辑器区 -->
         <div class="pt-2">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label class="text-xs font-bold text-zinc-700 dark:text-zinc-300">
               标准 ESModule 沙箱脚本 (内置 axios & cheerio)
             </label>
             
-            <!-- 快速测试调试栏 -->
+            <!-- 快速测试调试栏 (Naive UI 组件) -->
             <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-400">动作:</span>
-              <select
-                v-model="testAction"
-                class="px-2 py-1 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-lg text-xs font-mono outline-none"
-              >
-                <option value="discovery">discovery()</option>
-                <option value="search">search()</option>
-                <option value="detail">detail()</option>
-                <option value="parse">parse()</option>
-              </select>
-
-              <input
-                v-model="testParam"
-                type="text"
-                placeholder="测试参数 (关键字/key/分类)..."
-                class="px-2.5 py-1 bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/10 rounded-lg text-xs outline-none w-36 sm:w-48"
+              <span class="text-xs text-zinc-400">动作:</span>
+              <n-select
+                v-model:value="testAction"
+                size="small"
+                :options="testActionOptions"
+                class="w-32 !rounded-lg text-xs"
               />
 
-              <button
-                type="button"
+              <n-input
+                v-model:value="testParam"
+                size="small"
+                placeholder="测试参数 (关键字/key/分类)..."
+                clearable
+                class="w-36 sm:w-48 !rounded-lg text-xs"
+                @keyup.enter="onRunTest"
+              />
+
+              <n-button
+                size="small"
+                type="primary"
+                class="!rounded-lg !font-bold"
+                :loading="testing"
                 @click="onRunTest"
-                :disabled="testing"
-                class="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all cursor-pointer disabled:opacity-50"
               >
-                <Play class="w-3 h-3 fill-current" />
-                <span>{{ testing ? '运行中...' : '测试运行' }}</span>
-              </button>
+                <template #icon>
+                  <Play class="w-3 h-3 fill-current" />
+                </template>
+                {{ testing ? '运行中...' : '测试运行' }}
+              </n-button>
             </div>
           </div>
 
-          <div id="drawer-target" class="w-full border border-slate-200/60 dark:border-white/10 rounded-2xl overflow-hidden relative">
+          <div id="drawer-target" class="w-full border border-emerald-100/60 dark:border-white/10 rounded-2xl overflow-hidden relative">
             <code-editor v-model="form.code" model-id="rule_code" :height="480" />
 
             <!-- 运行结果抽屉 -->
@@ -316,24 +337,30 @@ onMounted(() => {
         </div>
 
         <!-- 底部提交/重置工具条 -->
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200/50 dark:border-white/5 mt-6">
-          <button
-            type="button"
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-emerald-100/50 dark:border-white/5 mt-6">
+          <n-button
+            size="medium"
+            secondary
+            class="!rounded-xl !font-bold"
             @click="onReset"
-            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer"
           >
-            <RefreshCcw class="w-3.5 h-3.5" />
-            <span>重置</span>
-          </button>
-          <button
-            type="button"
-            :disabled="submitLoading"
+            <template #icon>
+              <RefreshCcw class="w-3.5 h-3.5" />
+            </template>
+            重置
+          </n-button>
+          <n-button
+            size="medium"
+            type="primary"
+            class="!rounded-xl !font-bold"
+            :loading="submitLoading"
             @click="onSubmit"
-            class="flex items-center gap-1.5 px-6 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
           >
-            <Save class="w-3.5 h-3.5" />
-            <span>{{ submitLoading ? '保存中...' : '保存规则配置' }}</span>
-          </button>
+            <template #icon>
+              <Save class="w-3.5 h-3.5" />
+            </template>
+            {{ submitLoading ? '保存中...' : '保存规则配置' }}
+          </n-button>
         </div>
       </n-form>
     </div>

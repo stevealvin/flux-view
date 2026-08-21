@@ -100,41 +100,49 @@ onMounted(() => {
     <!-- 顶部操作栏 (mori-box 风格) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
       <div class="flex items-center gap-3 min-w-0">
-        <button
+        <n-button
+          quaternary
+          size="small"
+          class="!p-2 !rounded-xl"
           @click="router.back()"
-          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer flex-shrink-0"
           title="返回"
         >
-          <ArrowLeft class="w-4 h-4" />
-        </button>
+          <template #icon>
+            <ArrowLeft class="w-4 h-4" />
+          </template>
+        </n-button>
         <div class="min-w-0">
-          <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white truncate flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-zinc-900 dark:text-white truncate flex items-center gap-2">
             <span>{{ rule ? rule.name : '规则发现大厅' }}</span>
-            <span v-if="rule" class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/30">
+            <span v-if="rule" class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
               {{ rule.type === 'video' ? '视频' : rule.type === 'picture' ? '图片' : '小说' }}
             </span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400" v-if="rule?.description">
+          <p class="text-xs text-zinc-500 dark:text-zinc-400" v-if="rule?.description">
             {{ rule.description }}
           </p>
         </div>
       </div>
 
-      <button
+      <n-button
+        size="small"
+        secondary
+        class="!rounded-xl"
+        :loading="executing"
         @click="executeDiscovery"
-        :disabled="executing"
-        class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 transition-all cursor-pointer disabled:opacity-50"
         title="刷新流"
       >
-        <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': executing }" />
-      </button>
+        <template #icon>
+          <RefreshCw class="w-3.5 h-3.5" />
+        </template>
+      </n-button>
     </div>
 
     <!-- 状态反馈 -->
     <div>
       <div v-if="loading || executing" class="flex flex-col items-center justify-center py-28 gap-3">
         <n-spin size="large" />
-        <span class="text-slate-400 text-sm">正在加载并解析发现流...</span>
+        <span class="text-zinc-400 text-sm">正在加载并解析发现流...</span>
       </div>
 
       <div
@@ -143,21 +151,23 @@ onMounted(() => {
       >
         <AlertCircle class="w-10 h-10 text-rose-500" />
         <h3 class="text-sm font-bold text-rose-600 dark:text-rose-400">发现流解析异常</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">{{ errorMsg }}</p>
-        <button
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ errorMsg }}</p>
+        <n-button
+          type="error"
+          ghost
+          class="!rounded-xl !font-bold mt-3"
           @click="executeDiscovery"
-          class="mt-3 px-4 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer"
         >
           重新尝试
-        </button>
+        </n-button>
       </div>
 
       <div
         v-else-if="items.length === 0"
         class="glass-panel rounded-2xl p-16 text-center max-w-md mx-auto my-12 flex flex-col items-center justify-center space-y-3"
       >
-        <Compass class="w-10 h-10 text-slate-400" />
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">没有发现任何内容</h3>
+        <Compass class="w-10 h-10 text-zinc-400" />
+        <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">没有发现任何内容</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400">该规则解析返回了空列表，请检查规则脚本配置。</p>
       </div>
 
@@ -171,10 +181,10 @@ onMounted(() => {
         <div
           v-for="(item, idx) in items"
           :key="item.key || idx"
-          class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-slate-200/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-indigo-500/10 active:scale-98"
+          class="group relative flex flex-col rounded-2xl overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-emerald-100/60 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xl hover:shadow-emerald-500/10 active:scale-98"
           @click="goToDetail(item)"
         >
-          <div class="w-full relative overflow-hidden bg-slate-200 dark:bg-slate-900" :class="coverAspectClass">
+          <div class="w-full relative overflow-hidden bg-zinc-200 dark:bg-zinc-900" :class="coverAspectClass">
             <img
               v-if="item.cover"
               :src="item.cover"
@@ -183,7 +193,7 @@ onMounted(() => {
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
-            <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+            <div v-else class="w-full h-full flex items-center justify-center text-zinc-400">
               <component :is="activeIcon" class="w-8 h-8" />
             </div>
 
@@ -200,10 +210,10 @@ onMounted(() => {
           </div>
 
           <div class="p-2.5 sm:p-3 flex flex-col justify-between flex-1 space-y-1">
-            <h3 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+            <h3 class="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
               {{ item.title }}
             </h3>
-            <p v-if="item.desc" class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+            <p v-if="item.desc" class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
               {{ item.desc }}
             </p>
           </div>
